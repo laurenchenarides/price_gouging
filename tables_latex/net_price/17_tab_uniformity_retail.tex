@@ -1,0 +1,36 @@
+
+\begin{table}[htbp]
+   \caption{\label{tab:uniformity_retail} Within-chain retail price uniformity during and after SOE}
+   \centering
+   \begin{tabular}{lcccccc}
+      \tabularnewline \midrule \midrule
+      Model:       & (1)           & (2)     & (3)           & (4)     & (5)           & (6)\\  
+      \midrule
+      \emph{Variables}\\
+      Constant     & 0.050$^{***}$ &         &               &         &               &   \\   
+                   & (0.008)       &         &               &         &               &   \\   
+      During SOE   & -0.017$^{**}$ & 0.008   & -0.017$^{**}$ & 0.008   & -0.017$^{**}$ & 0.008\\   
+                   & (0.007)       & (0.012) & (0.007)       & (0.012) & (0.007)       & (0.012)\\   
+      Post-SOE     & -0.013        & 0.0005  & -0.012        & 0.0001  & -0.012        & 0.0001\\   
+                   & (0.010)       & (0.014) & (0.010)       & (0.014) & (0.010)       & (0.014)\\   
+      \midrule
+      \emph{Fixed-effects}\\
+      month\_fe    &               & Yes     &               & Yes     &               & Yes\\  
+      retailer     &               &         & Yes           & Yes     & Yes           & Yes\\  
+      product      &               &         & Yes           & Yes     & Yes           & Yes\\  
+      \midrule
+      \emph{Fit statistics}\\
+      Observations & 4,465         & 4,465   & 4,465         & 4,465   & 4,465         & 4,465\\  
+      R$^2$        & 0.02352       & 0.07494 & 0.04353       & 0.09442 & 0.04353       & 0.09442\\  
+      \midrule \midrule
+      \multicolumn{7}{l}{\emph{Clustered (retailer\_product) standard-errors in parentheses}}\\
+      \multicolumn{7}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+   \end{tabular}
+   
+   \par \raggedright 
+   Dependent variable: mean absolute log retail price difference across store pairs within retailer-product-week cells.\\
+   Omitted category: pre-SOE period.\\
+   Standard errors clustered at the retailer-product level.
+\end{table}
+
+
