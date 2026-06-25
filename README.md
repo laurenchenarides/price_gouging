@@ -1,4 +1,4 @@
-# Anti-Price Gouging Laws and Retailer Pricing Behavior During COVID-19
+# Food Retailer Pricing Behavior Under Anti-Price Gouging Laws: Evidence from Wholesale and Retail Scanner Data
 
 **Chenarides, Richards, and Dong**
 
@@ -24,7 +24,7 @@ All tables and figures are written to `tables_latex/` and `figures/`. See [Scrip
 
 **States:** Alabama, Florida, Georgia, Louisiana, Mississippi
 
-**Retailers:** three regional grocery chains (retailer 4 excluded: closed mid-sample)
+**Retailers:** three regional grocery chains (one retailer from original dataset is excluded: closed mid-sample)
 
 **Period:** January 2018 – July 2023 (weekly)
 
@@ -38,7 +38,7 @@ The figure below shows weekly retail volume and prices across all products and s
 
 ## Variable Construction
 
-The primary retail price is `p_ist_net` — the volume-weighted transaction price (net of promotional discounts). This is the consumer-relevant price and matches the paper's estimating equations. The posted shelf price `p_ist_gross` is retained for robustness and for the promotional expansion mechanism (Section V).
+The primary retail price is `p_ist_net` — the volume-weighted transaction price (net of promotional discounts). This is the consumer-relevant price and matches the paper's estimating equations. The posted shelf price `p_ist_gross` is retained for robustness and for the promotional expansion mechanism.
 
 Net and gross prices diverge during the SOE because the share of transactions completed at a promotional price rose from ~8% pre-SOE to ~30% during the SOE. The figure below shows the gross price (blue), net price (red), and wholesale cost (green dashed) for each product in the year before and after SOE activation.
 
@@ -75,7 +75,7 @@ Period means for price, cost, margin, and volume by product are in `tables_latex
 
 ## Empirical Model and Results
 
-### Price and Margin Level Regressions (Section IV.A–B)
+### Price and Margin Level Regressions
 
 Specification:
 
@@ -91,7 +91,17 @@ State heterogeneity in price effects:
 
 ![Price coefficients by state](figures/09_fig_price_coef_state_heterog.png)
 
-### Pass-Through Regressions (Section IV.C)
+---
+
+## Mechanisms
+
+### Mechanism 1: Consant Retail Prices
+
+Within-chain price uniformity is measured as the mean absolute log price difference across store pairs, by retailer-product-week. The regression tests whether uniformity changed during and after the SOE.
+
+![Retail price uniformity by period](figures/16_fig_logdiff_retail_by_period.png)
+
+### Mechanism 2: Variation in Pass-Through
 
 Specification:
 
@@ -107,16 +117,6 @@ The preferred specification includes week fixed effects (τ_t). The identifying 
 The duration extension asks how many weeks it takes for pass-through to return to baseline after SOE activation:
 
 ![Pass-through by enforcement duration](figures/13_fig_passthrough_duration.png)
-
-### Uniform Pricing (Section IV.D)
-
-Within-chain price uniformity is measured as the mean absolute log price difference across store pairs, by retailer-product-week. The regression tests whether uniformity changed during and after the SOE.
-
-![Retail price uniformity by period](figures/16_fig_logdiff_retail_by_period.png)
-
----
-
-## Mechanisms
 
 ### Mechanism 3: Countercyclical Promotional Pricing (Section V)
 
@@ -137,14 +137,14 @@ Scripts are called in order by `run_all.R`. The table below maps each script to 
 | Script | Paper section | Purpose | Key outputs |
 |--------|--------------|---------|-------------|
 | `00_read_in_data.R` | — | Pull product tables from SQL; assemble `panel_upc_week` | `panel_upc_week` in memory |
-| `01_price_sensitivity_diagnostic.R` | Appendix | Compare `p_ist_net` vs `p_ist_gross`; step charts by product | `diag_01`–`diag_08` figures |
-| `02_build_panel.R` | Sec. III | CPI deflation, SOE timing, first differences, trimming | `panel_est`, `save_tex()` |
-| `03_descriptive_tables.R` | Sec. II–III | Coverage tables, period means, flagged-weeks | Tables 01–07, Figs 01–03 |
-| `04_residual_plots.R` | Sec. III.C–E | Residualized trend plots by pool/state/product | Figs 04–07 |
-| `05_regressions.R` | Sec. IV.A–B | Price and margin level regressions | Tables 08–11, Figs 08–11 |
-| `06_passthrough.R` | Sec. IV.C | Pass-through regressions + duration extension | Tables 12–14, Figs 12–13 |
-| `07_uniform_pricing.R` | Sec. IV.D | Within-chain price uniformity | Tables 15–20, Figs 14–18 |
-| `08_demand_rotation.R` | Sec. V | Countercyclical pricing: promo intensity, price dispersion, IV | Tables 21–24, Figs 19–21 |
+| `01_price_sensitivity_diagnostic.R` | Variable Construction (diagnostic) | Compare `p_ist_net` vs `p_ist_gross`; step charts by product | `diag_01`–`diag_08` figures |
+| `02_build_panel.R` | Variable Construction | CPI deflation, SOE timing, first differences, trimming | `panel_est`, `save_tex()` |
+| `03_descriptive_tables.R` | Results: Descriptive Evidence; Incidence of Price Gouging | Coverage tables, period means, flagged-weeks | Tables 01–07, Figs 01–03 |
+| `04_residual_plots.R` | Results: Descriptive Evidence | Residualized trend plots by pool/state/product | Figs 04–07 |
+| `05_regressions.R` | Empirical Model; Results: Retail Prices; Markups | Price and margin level regressions | Tables 08–11, Figs 08–11 |
+| `06_passthrough.R` | Mechanisms: Mechanism 2 (Variation in Pass-Through) | Pass-through regressions + duration extension | Tables 12–14, Figs 12–13 |
+| `07_uniform_pricing.R` | Mechanisms: Mechanism 1 (Constant Retail Prices) | Within-chain price uniformity | Tables 15–20, Figs 14–18 |
+| `08_demand_rotation.R` | Mechanisms: Mechanism 3 (Countercyclical Pricing) | Promo intensity, price dispersion, IV pass-through | Tables 21–24, Figs 19–21 |
 
 ### Global flags (`run_all.R`)
 
@@ -163,58 +163,58 @@ Scripts are called in order by `run_all.R`. The table below maps each script to 
 
 | File | Section | Content |
 |------|---------|---------|
-| `01_tab_decadata_summary.tex` | II | Coverage by year |
-| `02_tab_decadata_summary_wide.tex` | II | Coverage by year × retailer × state |
-| `03_tab_product_coverage.tex` | II | Coverage and sales by product |
-| `04_tab_period_means_nominal.tex` | III.A | Period means: nominal price, cost, margin, volume |
-| `05_tab_period_means_real.tex` | III.A | Period means: real prices (supplementary) |
-| `06_tab_flagged_weeks_all.tex` | III.B | APG flag rates across thresholds |
-| `07_tab_flagged_weeks_T25.tex` | III.B | Flag rates at 25% threshold by product |
-| `08_tab_price_reg.tex` | IV.A | Price level regressions |
-| `09_tab_price_reg_state_heterog.tex` | IV.A | Price effects by state |
-| `10_tab_margin_reg.tex` | IV.B | Margin level regressions |
-| `11_tab_margin_reg_state_heterog.tex` | IV.B | Margin effects by state |
-| `12_tab_passthrough_reg.tex` | IV.C | Pass-through: no week FE vs week FE |
-| `13_tab_passthrough_duration.tex` | IV.C | Pass-through duration extension |
-| `14_tab_passthrough_implied_soe.tex` | IV.C | Implied SOE pass-through at selected durations |
-| `15_tab_uniformity_summary_retail.tex` | IV.D | Retail log-diff summary by period |
-| `16_tab_uniformity_summary_wholesale.tex` | IV.D | Wholesale log-diff summary by period |
-| `17_tab_uniformity_retail.tex` | IV.D | Uniformity regressions: retail |
-| `18_tab_uniformity_wholesale.tex` | IV.D | Uniformity regressions: wholesale |
-| `19_tab_uniformity_heterog_retail.tex` | IV.D | Retailer heterogeneity: retail uniformity |
-| `20_tab_uniformity_heterog_wholesale.tex` | IV.D | Retailer heterogeneity: wholesale uniformity |
-| `21_tab_gross_net_gap.tex` | V | SOE effect on gross-to-net price gap |
-| `22_tab_promo_intensity.tex` | V | SOE effect on share on sale and discount depth |
-| `23_tab_price_dispersion.tex` | V | SOE effect on within-store price dispersion |
-| `24_tab_iv_passthrough.tex` | V | IV pass-through: OLS vs demand rotation IV |
+| `01_tab_decadata_summary.tex` | Results: Descriptive Evidence | Coverage by year |
+| `02_tab_decadata_summary_wide.tex` | Results: Descriptive Evidence | Coverage by year × retailer × state |
+| `03_tab_product_coverage.tex` | Results: Descriptive Evidence | Coverage and sales by product |
+| `04_tab_period_means_nominal.tex` | Results: Descriptive Evidence | Period means: nominal price, cost, margin, volume |
+| `05_tab_period_means_real.tex` | Results: Descriptive Evidence | Period means: real prices (supplementary) |
+| `06_tab_flagged_weeks_all.tex` | Results: Incidence of Price Gouging | APG flag rates across thresholds |
+| `07_tab_flagged_weeks_T25.tex` | Results: Incidence of Price Gouging | Flag rates at 25% threshold by product |
+| `08_tab_price_reg.tex` | Results: Retail Prices | Price level regressions |
+| `09_tab_price_reg_state_heterog.tex` | Results: Retail Prices | Price effects by state |
+| `10_tab_margin_reg.tex` | Results: Markups | Margin level regressions |
+| `11_tab_margin_reg_state_heterog.tex` | Results: Markups | Margin effects by state |
+| `12_tab_passthrough_reg.tex` | Mechanisms: Mechanism 2 (Variation in Pass-Through) | Pass-through: no week FE vs week FE |
+| `13_tab_passthrough_duration.tex` | Mechanisms: Mechanism 2 (Variation in Pass-Through) | Pass-through duration extension |
+| `14_tab_passthrough_implied_soe.tex` | Mechanisms: Mechanism 2 (Variation in Pass-Through) | Implied SOE pass-through at selected durations |
+| `15_tab_uniformity_summary_retail.tex` | Mechanisms: Mechanism 1 (Constant Retail Prices) | Retail log-diff summary by period |
+| `16_tab_uniformity_summary_wholesale.tex` | Mechanisms: Mechanism 1 (Constant Retail Prices) | Wholesale log-diff summary by period |
+| `17_tab_uniformity_retail.tex` | Mechanisms: Mechanism 1 (Constant Retail Prices) | Uniformity regressions: retail |
+| `18_tab_uniformity_wholesale.tex` | Mechanisms: Mechanism 1 (Constant Retail Prices) | Uniformity regressions: wholesale |
+| `19_tab_uniformity_heterog_retail.tex` | Mechanisms: Mechanism 1 (Constant Retail Prices) | Retailer heterogeneity: retail uniformity |
+| `20_tab_uniformity_heterog_wholesale.tex` | Mechanisms: Mechanism 1 (Constant Retail Prices) | Retailer heterogeneity: wholesale uniformity |
+| `21_tab_gross_net_gap.tex` | Mechanisms: Mechanism 3 (Countercyclical Pricing) | SOE effect on gross-to-net price gap |
+| `22_tab_promo_intensity.tex` | Mechanisms: Mechanism 3 (Countercyclical Pricing) | SOE effect on share on sale and discount depth |
+| `23_tab_price_dispersion.tex` | Mechanisms: Mechanism 3 (Countercyclical Pricing) | SOE effect on within-store price dispersion |
+| `24_tab_iv_passthrough.tex` | Mechanisms: Mechanism 3 (Countercyclical Pricing) | IV pass-through: OLS vs demand rotation IV |
 
 ### Figures (`figures/`)
 
 | File | Section | Content |
 |------|---------|---------|
-| `diag_06_cost_series.png` | Appendix | Gross price, net price, wholesale cost over time |
-| `diag_08_price_step_by_product.png` | Appendix | Step chart: gross, net, wholesale by product ±1 yr around SOE |
-| `01_fig_volume_and_prices_dual_axis.png` | II | Weekly volume + nominal and real prices |
-| `02_fig_cost_weekly.png` | II | Mean wholesale cost over time |
-| `03_fig_flag_cluster_stacked.png` | III.B | APG flag rates: stacked bar |
-| `04_fig_resid_volume_pooled.png` | III.C | Residualized volume trend |
-| `05_fig_resid_price_pooled.png` | III.C | Residualized nominal price trend |
-| `06_fig_resid_cost_pooled.png` | III.C | Residualized cost trend |
-| `07_fig_resid_margin_pooled.png` | III.C | Residualized margin trend |
-| `08_fig_price_coef_baseline.png` | IV.A | Price regression coefficients |
-| `09_fig_price_coef_state_heterog.png` | IV.A | Price coefficients by state |
-| `10_fig_margin_coef_prepost.png` | IV.B | Margin regression coefficients |
-| `11_fig_margin_coef_state_heterog.png` | IV.B | Margin coefficients by state |
-| `12_fig_passthrough_coef.png` | IV.C | Pass-through: no FE vs week FE |
-| `13_fig_passthrough_duration.png` | IV.C | Implied SOE pass-through by duration |
-| `14_fig_logdiff_retail_pooled.png` | IV.D | Retail log-diff distribution |
-| `15_fig_logdiff_wholesale_pooled.png` | IV.D | Wholesale log-diff distribution |
-| `16_fig_logdiff_retail_by_period.png` | IV.D | Retail log-diff by SOE period |
-| `17_fig_logdiff_wholesale_by_period.png` | IV.D | Wholesale log-diff by SOE period |
-| `18_fig_uniformity_heterog_coef.png` | IV.D | Retailer heterogeneity in uniformity |
-| `19_fig_gross_net_gap.png` | V | Gross-to-net price gap over time |
-| `20_fig_promo_intensity.png` | V | Share on sale and discount depth over time |
-| `21_fig_price_dispersion.png` | V | Within-store price dispersion over time |
+| `diag_06_cost_series.png` | Variable Construction (diagnostic) | Gross price, net price, wholesale cost over time |
+| `diag_08_price_step_by_product.png` | Variable Construction (diagnostic) | Step chart: gross, net, wholesale by product ±1 yr around SOE |
+| `01_fig_volume_and_prices_dual_axis.png` | Results: Descriptive Evidence | Weekly volume + nominal and real prices |
+| `02_fig_cost_weekly.png` | Results: Descriptive Evidence | Mean wholesale cost over time |
+| `03_fig_flag_cluster_stacked.png` | Results: Incidence of Price Gouging | APG flag rates: stacked bar |
+| `04_fig_resid_volume_pooled.png` | Results: Descriptive Evidence | Residualized volume trend |
+| `05_fig_resid_price_pooled.png` | Results: Descriptive Evidence | Residualized nominal price trend |
+| `06_fig_resid_cost_pooled.png` | Results: Descriptive Evidence | Residualized cost trend |
+| `07_fig_resid_margin_pooled.png` | Results: Descriptive Evidence | Residualized margin trend |
+| `08_fig_price_coef_baseline.png` | Results: Retail Prices | Price regression coefficients |
+| `09_fig_price_coef_state_heterog.png` | Results: Retail Prices | Price coefficients by state |
+| `10_fig_margin_coef_prepost.png` | Results: Markups | Margin regression coefficients |
+| `11_fig_margin_coef_state_heterog.png` | Results: Markups | Margin coefficients by state |
+| `12_fig_passthrough_coef.png` | Mechanisms: Mechanism 2 (Variation in Pass-Through) | Pass-through: no FE vs week FE |
+| `13_fig_passthrough_duration.png` | Mechanisms: Mechanism 2 (Variation in Pass-Through) | Implied SOE pass-through by duration |
+| `14_fig_logdiff_retail_pooled.png` | Mechanisms: Mechanism 1 (Constant Retail Prices) | Retail log-diff distribution |
+| `15_fig_logdiff_wholesale_pooled.png` | Mechanisms: Mechanism 1 (Constant Retail Prices) | Wholesale log-diff distribution |
+| `16_fig_logdiff_retail_by_period.png` | Mechanisms: Mechanism 1 (Constant Retail Prices) | Retail log-diff by SOE period |
+| `17_fig_logdiff_wholesale_by_period.png` | Mechanisms: Mechanism 1 (Constant Retail Prices) | Wholesale log-diff by SOE period |
+| `18_fig_uniformity_heterog_coef.png` | Mechanisms: Mechanism 1 (Constant Retail Prices) | Retailer heterogeneity in uniformity |
+| `19_fig_gross_net_gap.png` | Mechanisms: Mechanism 3 (Countercyclical Pricing) | Gross-to-net price gap over time |
+| `20_fig_promo_intensity.png` | Mechanisms: Mechanism 3 (Countercyclical Pricing) | Share on sale and discount depth over time |
+| `21_fig_price_dispersion.png` | Mechanisms: Mechanism 3 (Countercyclical Pricing) | Within-store price dispersion over time |
 
 ---
 

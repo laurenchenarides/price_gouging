@@ -7,9 +7,9 @@
       Model:         & (1)            & (2)\\  
       \midrule
       \emph{Variables}\\
-      $SOE_{st}$     & -0.093$^{***}$ & -0.021$^{***}$\\   
-                     & (0.001)        & (0.002)\\   
-      $postSOE_{st}$ &                & 0.152$^{***}$\\   
+      $SOE_{st}$     & -0.211$^{***}$ & -0.193$^{***}$\\   
+                     & (0.002)        & (0.002)\\   
+      $postSOE_{st}$ &                & 0.037$^{***}$\\   
                      &                & (0.002)\\   
       \midrule
       \emph{Fixed-effects}\\
@@ -17,8 +17,8 @@
       store\_id      & Yes            & Yes\\  
       \midrule
       \emph{Fit statistics}\\
-      Observations   & 603,306        & 603,306\\  
-      R$^2$          & 0.82361        & 0.83181\\  
+      Observations   & 604,121        & 604,121\\  
+      R$^2$          & 0.78815        & 0.78870\\  
       \midrule \midrule
       \multicolumn{3}{l}{\emph{Clustered (store\_id) standard-errors in parentheses}}\\
       \multicolumn{3}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
@@ -26,7 +26,6 @@
    
    \par \raggedright 
    Dependent variable: nominal retail price $p_{ist}$ (dollars per unit or pound).\\
-   Specification: $p_{ist} = \alpha + \beta_1 SOE_{st} + \beta_2 postSOE_{st} + \gamma_i + \delta_s + \varepsilon_{ist}$.\\
    Fixed effects: product ($\gamma_j$) and store ($\delta_i$).\\
    Standard errors clustered at the store level.
 \end{table}

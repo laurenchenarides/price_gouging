@@ -1,7 +1,7 @@
 # ==============================================================================
 # run_all.R
 #
-# Anti-Price Gouging Laws and Retailer Pricing Behavior During COVID-19
+# Food Retailer Pricing Behavior Under Anti-Price Gouging Laws: Evidence from Wholesale and Retail Scanner Data
 # Chenarides, Richards, and Dong
 #
 # Master script. Source this file to reproduce all tables and figures.
@@ -10,13 +10,14 @@
 #
 # Script execution order:
 #   00_read_in_data.R                  SQL pull and panel assembly
-#   01_price_sensitivity_diagnostics.R Price measure diagnostics
-#   02_build_panel.R                   CPI deflation, SOE timing, first diffs
-#   03_descriptive_tables.R            Section II-III tables and figures
-#   04_residual_plots.R                Section III.C-E residualized trend plots
-#   05_regressions.R                   Section IV.A-B price and margin regs
-#   06_passthrough.R                   Section IV.C pass-through regressions
-#   07_uniform_pricing.R               Section IV.D uniform pricing
+#   01_price_sensitivity_diagnostic.R  Variable Construction (diagnostic)
+#   02_build_panel.R                   Variable Construction
+#   03_descriptive_tables.R            Results: Descriptive Evidence + Incidence of Price Gouging
+#   04_residual_plots.R                Results: Descriptive Evidence
+#   05_regressions.R                   Empirical Model + Results: Retail Prices + Markups
+#   06_passthrough.R                   Mechanisms: Mechanism 2 (Variation in Pass-Through)
+#   07_uniform_pricing.R               Mechanisms: Mechanism 1 (Constant Retail Prices)
+#   08_demand_rotation.R               Mechanisms: Mechanism 3 (Countercyclical Pricing)
 # ==============================================================================
 
 rm(list = ls())

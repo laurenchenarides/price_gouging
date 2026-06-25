@@ -147,6 +147,8 @@ g_vol_price <- ggplot(wk, aes(x = week_start)) +
   theme_minimal() +
   theme(legend.position = "top", plot.subtitle = element_text(size = 8))
 
+g_vol_price
+
 ggsave("figures/01_fig_volume_and_prices_dual_axis.png", g_vol_price,
        width = 11, height = 5.5, dpi = 300)
 message("Saved: figures/01_fig_volume_and_prices_dual_axis.png")
@@ -181,6 +183,8 @@ g_cost_weekly <- ggplot(cost_weekly, aes(x = week_start, y = value, linetype = s
   ) +
   theme_minimal() +
   theme(legend.position = "top", plot.subtitle = element_text(size = 8))
+
+g_cost_weekly
 
 ggsave("figures/02_fig_cost_weekly.png", g_cost_weekly,
        width = 11, height = 5.5, dpi = 300)
@@ -402,7 +406,8 @@ save_tex(
 # 7. SECTION III.B: FLAGGED-WEEKS TABLE
 # ==============================================================================
 # A store-product-week is flagged if the nominal retail price during the SOE
-# exceeds the four-week pre-SOE average by more than threshold kappa.
+# exceeds the average nominal retail price over the 30 days prior to the SOE
+# start date by more than threshold kappa.
 # Cost justification: dollar price increase does not exceed dollar cost increase.
 # ==============================================================================
 
@@ -414,7 +419,7 @@ COST_MULT  <- 1.00
 baseline_flag <- panel_est %>%
   filter(!is.na(apg_start_date)) %>%
   mutate(days_to_start = as.integer(apg_start_date - week_start)) %>%
-  filter(days_to_start > 0, days_to_start <= 28) %>%
+  filter(days_to_start > 0, days_to_start <= 30) %>%
   group_by(store_id, product) %>%
   summarise(
     p_base = mean(p_ist, na.rm = TRUE),
@@ -585,6 +590,8 @@ g_flag_cluster <- ggplot(plot_long,
   theme_minimal() +
   theme(legend.position = "top", axis.text.x = element_text(angle = 35, hjust = 1),
         plot.subtitle = element_text(size = 8))
+
+g_flag_cluster
 
 ggsave("figures/03_fig_flag_cluster_stacked.png", g_flag_cluster,
        width = 12, height = 6, dpi = 300)

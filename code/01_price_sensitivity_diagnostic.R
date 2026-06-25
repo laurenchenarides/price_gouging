@@ -24,6 +24,9 @@
 #   figures/diag_03_price_gap_over_time.png
 #   figures/diag_04_margin_series_comparison.png
 #   figures/diag_05_margin_gap_over_time.png
+#   figures/diag_06_cost_series.png
+#   figures/diag_07_cost_series_comparison.png
+#   figures/diag_08_price_step_by_product.png
 # ==============================================================================
 
 # ------------------------------------------------------------------------------

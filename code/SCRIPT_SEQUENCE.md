@@ -21,39 +21,51 @@ Compares three price measures — `p_ist_net`, `p_ist_gross`, `avg_unit_price` �
 **`02_build_panel.R`**
 Sets `p_ist = p_ist_net` (primary price variable). Reads and rebases BLS CPI-U. Joins deflator; constructs `margin_nom`, `p_real`, `w_real`. Builds SOE timing variables (`SoE`, `postSoE`, `preSoE`, `Dur_st`, `k_start`, `k_end`). Takes weekly first differences (`dP`, `dW`, `dM`). Trims top/bottom 1% of log price changes within product. Defines `save_tex()` helper used by all downstream table-writing scripts.
 
+---
+
+### Variable Construction (diagnostic)
+
+**`01_price_sensitivity_diagnostic.R`**
+Compares three price measures — p_ist_net, p_ist_gross, avg_unit_price — and documents the promotional environment. Produces step charts (gross, net, wholesale) by product around SOE activation. The volume filter upc_week_volume >= 2 guards against near-zero-volume artifacts in diag_08.
+
+---
+
+### Variable Construction
+
+**`02_build_panel.R`**
+Sets p_ist = p_ist_net (primary price variable). Reads and rebases BLS CPI-U. Joins deflator; constructs margin_nom, p_real, w_real. Builds SOE timing variables (SoE, postSoE, preSoE, Dur_st, k_start, k_end). Takes weekly first differences (dP, dW, dM). Trims top/bottom 1% of log price changes within product. Defines save_tex() helper used by all downstream table-writing scripts.
+
 Output objects: `panel_levels`, `panel_est`
 
 ---
 
-### Section II: Data Description
+### Results: Descriptive Evidence
 
-**`03_descriptive_tables.R`** → Tables 01–07, Figures 01–03
+**`03_descriptive_tables.R`** → Tables 01–05, Figures 01–02
 
 - **Table 01** (`01_tab_decadata_summary.tex`): Coverage by year (banners, stores, obs)
 - **Table 02** (`02_tab_decadata_summary_wide.tex`): Coverage by year × retailer × state
 - **Table 03** (`03_tab_product_coverage.tex`): Coverage and average sales by product
+- **Table 04** (`04_tab_period_means_nominal.tex`): Period means — nominal price, cost, margin, volume by product
+- **Table 05** (`05_tab_period_means_real.tex`): Period means — real prices (supplementary)
 - **Figure 01** (`01_fig_volume_and_prices_dual_axis.png`): Weekly volume and prices (dual axis)
 - **Figure 02** (`02_fig_cost_weekly.png`): Mean wholesale cost over time
 
----
+### Results: Incidence of Price Gouging
 
-### Section III: Descriptive Evidence
+**`03_descriptive_tables.R`** → Tables 06–07, Figure 03
 
-**`03_descriptive_tables.R`** (continued) → Tables 04–07, Figure 03
-
-- **Table 04** (`04_tab_period_means_nominal.tex`): Period means — nominal price, cost, margin, volume by product
-- **Table 05** (`05_tab_period_means_real.tex`): Period means — real prices (supplementary)
 - **Table 06** (`06_tab_flagged_weeks_all.tex`): APG flag rates across five thresholds
 - **Table 07** (`07_tab_flagged_weeks_T25.tex`): Flag rates at 25% threshold by product
 - **Figure 03** (`03_fig_flag_cluster_stacked.png`): Stacked bar of flag rates by retailer
 
-**`04_residual_plots.R`** → Figures 04–07 (pooled); optional by-state and by-product
+`04_residual_plots.R` → Figures 04–07 (pooled); optional by-state and by-product
 
 Regresses each outcome on product + store FEs; plots weekly mean residuals. Outcomes: volume, price, cost, margin. By-group plots produced when `SAVE_OPTIONAL_PLOTS = TRUE`.
 
 ---
 
-### Section IV.A–B: Price and Margin Level Regressions
+### Empirical Model: Price and Margin Level Regressions
 
 **`05_regressions.R`** → Tables 08–11, Figures 08–11
 
@@ -68,7 +80,19 @@ Fixed effects: product and store. Standard errors clustered at the store level.
 
 ---
 
-### Section IV.C: Pass-Through Regressions
+### Mechanism 1: Constant Retail Prices
+
+**`07_uniform_pricing.R`** → Tables 15–20, Figures 14–18
+
+Outcome: mean absolute log price difference across store pairs within retailer-product-week. Tests whether within-chain price uniformity changed during and after the SOE.
+
+- **Tables 15–16**: Summary of retail and wholesale log-differences by period
+- **Tables 17–18**: Uniformity regressions (retail and wholesale)
+- **Tables 19–20**: Retailer heterogeneity in uniformity response
+
+---
+
+### Mechanism 2: Variation in Pass-Through
 
 **`06_passthrough.R`** → Tables 12–14, Figures 12–13
 
@@ -86,19 +110,7 @@ Duration extension runs when `RUN_DUR_EXTENSION = TRUE` (default).
 
 ---
 
-### Section IV.D: Uniform Pricing
-
-**`07_uniform_pricing.R`** → Tables 15–20, Figures 14–18
-
-Outcome: mean absolute log price difference across store pairs within retailer-product-week. Tests whether within-chain price uniformity changed during and after the SOE.
-
-- **Tables 15–16**: Summary of retail and wholesale log-differences by period
-- **Tables 17–18**: Uniformity regressions (retail and wholesale)
-- **Tables 19–20**: Retailer heterogeneity in uniformity response
-
----
-
-### Section V: Mechanisms — Countercyclical Promotional Pricing
+### Mechanism 3: Countercyclical Promotional Pricing
 
 **`08_demand_rotation.R`** → Tables 21–24, Figures 19–21
 
