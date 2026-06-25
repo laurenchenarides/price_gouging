@@ -137,7 +137,7 @@ g_vol_price <- ggplot(wk, aes(x = week_start)) +
   labs(
     title    = "Weekly volume with mean prices (dual axis)",
     subtitle = paste0(
-      "Products: bananas, cucumbers, lettuce, tomatoes, peppers. Retailer 4 excluded.\n",
+      "Products: bananas, cabbage, cucumbers, lettuce, tomatoes. Retailer 4 excluded.\n",
       "Shaded = SOE period (", soe_start, " to ", soe_end, ").\n",
       sprintf("Pre to first 4 SOE weeks -- volume: %+.1f%%, nom. price: %+.1f%%, real price: %+.1f%%, nom. cost: %+.1f%%.",
               pct_chg_vol_onset, pct_chg_nom_onset, pct_chg_real_onset, pct_chg_cost_nom_onset)
@@ -238,12 +238,12 @@ save_tex(
       caption = paste0(
         "Store locations by year, retailer, and state. ",
         "The sample covers five Southeastern states and five fresh produce categories: ",
-        "bananas, cucumbers, lettuce, peppers, and tomatoes. Retailer 4 excluded. ",
+        "bananas, cabbage, cucumbers, lettuce, and tomatoes. Retailer 4 excluded. ",
         "Product selection required a UPC to pass coverage screens in at least 75\\% of stores, ",
         "where a store-level pass required at least 80\\% weekly presence in windows around ",
         "both APG activation and deactivation and at least five pre- and post-APG weeks observed. ",
         "Within each category, UPCs are ranked by total net sales; up to five per category are retained. ",
-        "The final panel uses one UPC each for bananas, cucumbers, lettuce, peppers, and tomatoes."
+        "The final panel uses one UPC each for bananas, cabbage, cucumbers, lettuce, and tomatoes."
       ),
       label = "tab:decadata_summary_wide",
       align = paste0("ll", strrep("r", n_states + 1)),
@@ -285,7 +285,7 @@ if (SAVE_CSV) write.csv(tab_product_raw, "tables_csv/03_tab_product_coverage.csv
 save_tex(
   kbl(tab_product_raw,
       format = "latex", booktabs = TRUE,
-      caption = "Coverage and sales for the five fresh produce categories, 2018--2022. Coverage is the share of store-product-weeks with positive sales. Average price is in nominal dollars per unit or pound. Volume units: pounds (bananas, cucumbers, peppers, tomatoes) and 8~oz bags (lettuce).",
+      caption = "Coverage and sales for the five fresh produce categories, 2018--2022. Coverage is the share of store-product-weeks with positive sales. Average price is in nominal dollars per unit or pound. Volume units: pounds (bananas, cabbage, cucumbers, tomatoes) and 8~oz bags (lettuce).",
       label   = "tab:product_coverage",
       align   = "lrrr",
       format.args = list(big.mark = ",")) %>%
@@ -372,7 +372,7 @@ if (SAVE_CSV) write.csv(means_nom, "tables_csv/04_tab_period_means_nominal.csv",
 save_tex(
   make_period_table_kbl(
     means_nom,
-    caption_str  = "Average weekly volume, nominal retail price, nominal wholesale cost, and nominal dollar margin by product and SOE period. Averages computed across store-product-weeks with positive sales, retailer 4 excluded. Volume units: pounds (bananas, cucumbers, peppers, tomatoes) and 8~oz bags (lettuce).",
+    caption_str  = "Average weekly volume, nominal retail price, nominal wholesale cost, and nominal dollar margin by product and SOE period. Averages computed across store-product-weeks with positive sales, retailer 4 excluded. Volume units: pounds (bananas, cabbage, cucumbers, tomatoes) and 8~oz bags (lettuce).",
     label_str    = "tab:period_means_nominal",
     price_label  = "Price (\\$)", cost_label = "Cost (\\$)", margin_label = "Margin (\\$)"
   ),
@@ -390,7 +390,7 @@ if (SAVE_CSV) write.csv(means_real, "tables_csv/05_tab_period_means_real.csv", r
 save_tex(
   make_period_table_kbl(
     means_real,
-    caption_str  = "Average weekly volume, real retail price, real wholesale cost, and real dollar margin by product and SOE period (January 2018 = 1.00 base). Averages computed across store-product-weeks with positive sales, retailer 4 excluded. Volume units: pounds (bananas, cucumbers, peppers, tomatoes) and 8~oz bags (lettuce).",
+    caption_str  = "Average weekly volume, real retail price, real wholesale cost, and real dollar margin by product and SOE period (January 2018 = 1.00 base). Averages computed across store-product-weeks with positive sales, retailer 4 excluded. Volume units: pounds (bananas, cabbage, cucumbers, tomatoes) and 8~oz bags (lettuce).",
     label_str    = "tab:period_means_real",
     price_label  = "Price (real \\$)", cost_label = "Cost (real \\$)", margin_label = "Margin (real \\$)"
   ),

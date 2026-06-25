@@ -18,44 +18,16 @@
 
 
 # ==============================================================================
-# 1b. DATA CORRECTIONS AND PRIMARY PRICE VARIABLE ASSIGNMENT
+# 1b. PRIMARY PRICE VARIABLE ASSIGNMENT
 # ==============================================================================
-# Peppers, week of 2019-05-27: revenue-weighted prices and costs are inflated
-# by near-zero volume denominators. See 01_price_sensitivity_diagnostic.R for
-# full documentation of the artifact and the basis for these replacements.
-# p_ist_gross and p_ist_net are replaced with avg_unit_price (~$1.02).
-# w_ist is replaced with the median w_ist for peppers in the two adjacent weeks
-# ($0.52/lb), which is consistent with the surrounding five-week window.
-#
-# Primary price variable: p_ist is set to p_ist_net (volume-weighted transaction
-# price) for all main regressions. This is the consumer-relevant price and
-# matches the paper's estimating equations.
-# p_ist_gross (posted shelf price) is retained for the promotional expansion
-# robustness check in Mechanism 3.
+# p_ist is set to p_ist_net (volume-weighted transaction price) for all main
+# regressions. This is the consumer-relevant price and matches the paper's
+# estimating equations. p_ist_gross (posted shelf price) is retained for the
+# promotional expansion robustness check in Mechanism 3.
 # ==============================================================================
 
 panel_upc_week <- panel_upc_week %>%
-  mutate(
-    p_ist_gross = if_else(
-      product == "peppers" & week_start == as.Date("2019-05-27"),
-      avg_unit_price,
-      p_ist_gross
-    ),
-    p_ist_net = if_else(
-      product == "peppers" & week_start == as.Date("2019-05-27"),
-      avg_unit_price,
-      p_ist_net
-    ),
-    w_ist = if_else(
-      product == "peppers" & week_start == as.Date("2019-05-27"),
-      0.52,
-      w_ist
-    ),
-    # Net price is the primary variable for all main regressions.
-    # Gross price is retained for the promotional expansion robustness check
-    # (Mechanism 3) and the diagnostic figures.
-    p_ist = p_ist_net
-  )
+  mutate(p_ist = p_ist_net)
 
 # ==============================================================================
 # 2. CPI DEFLATION AND VARIABLE CONSTRUCTION

@@ -7,7 +7,7 @@
 #
 # Unit of observation: store_id x product x week_seq
 #
-# Products pulled: bananas, lettuce, cabbage, cucumbers, tomatoes, peppers (removed this due to very low purchase quantities)
+# Products pulled: bananas, cabbage, cucumbers, lettuce, tomatoes
 #
 # This script is run once. The output panel is used by 01_deflate_and_construct.R.
 # SQL connection details are omitted for privacy; supply odbc driver string below.

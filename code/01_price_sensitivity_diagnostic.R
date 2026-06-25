@@ -14,18 +14,6 @@
 # bias in p_ist_net during the SOE relative to p_ist_gross, and may
 # overstate the price decline during the emergency period.
 #
-# Data corrections applied in this script before producing outputs:
-#   - Peppers, week of 2019-05-27: p_ist_gross and p_ist_net replaced with
-#     avg_unit_price (~$1.02). volume-weighted prices were inflated to
-#     $200-$430/lb due to near-zero volume denominators in a subset of stores.
-#     avg_unit_price is unaffected because it does not use volume as a
-#     denominator. Confirmed via spot check that posted shelf price was normal.
-#   - Peppers, week of 2019-05-27: w_ist replaced with the median w_ist for
-#     peppers across the immediately adjacent weeks (2019-05-20 and
-#     2019-06-03). The replacement value of $0.52/lb is consistent with the
-#     five-week window around the spike (range: $0.49 to $0.55 mean).
-#     Corrections are applied to panel_diag only and do not affect
-#     panel_upc_week or the main estimation panel.
 #
 # Outputs:
 #   tables_csv/diag_01_sale_share_by_period.csv
@@ -63,43 +51,6 @@ panel_diag <- panel_upc_week %>%
     margin_avg   = avg_unit_price - w_ist
   ) %>%
   filter(!is.na(period))
-
-# Identify the source of the price spike visible in diag_02
-# Find the week with the highest mean gross price
-spike_week <- panel_diag %>%
-  filter(p_ist_gross > 0) %>%
-  group_by(week_start) %>%
-  summarise(mean_p_gross = mean(p_ist_gross, na.rm = TRUE), .groups = "drop") %>%
-  arrange(desc(mean_p_gross)) %>%
-  slice(1) %>%
-  pull(week_start)
-
-message("Spike week: ", spike_week)
-
-# Within that week, find which product and stores are driving it
-spike_detail <- panel_diag %>%
-  filter(week_start == spike_week, p_ist_gross > 0) %>%
-  arrange(desc(p_ist_gross)) %>%
-  select(week_start, product, store_id, retailer_id, sst,
-         p_ist_gross, p_ist_net, avg_unit_price, w_ist,
-         upc_week_volume, upc_week_gross_sales)
-
-print(spike_detail)
-
-# Summary by product for that week
-spike_by_product <- panel_diag %>%
-  filter(week_start == spike_week, p_ist_gross > 0) %>%
-  group_by(product) %>%
-  summarise(
-    n_stores      = n(),
-    mean_p_gross  = mean(p_ist_gross, na.rm = TRUE),
-    max_p_gross   = max(p_ist_gross,  na.rm = TRUE),
-    mean_volume   = mean(upc_week_volume, na.rm = TRUE),
-    .groups = "drop"
-  ) %>%
-  arrange(desc(mean_p_gross))
-
-print(spike_by_product)
 
 # ------------------------------------------------------------------------------
 # Table 1: Sale share by period and product

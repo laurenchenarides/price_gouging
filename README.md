@@ -1,0 +1,278 @@
+# Anti-Price Gouging Laws and Retailer Pricing Behavior During COVID-19
+
+**Chenarides, Richards, and Dong**
+
+This repository contains the replication code for the analysis of anti-price gouging (APG) laws and grocery retail pricing during COVID-19 state-of-emergency (SOE) periods. The analysis uses a store-product-week panel of scanner data for five fresh produce products across five Southeastern states.
+
+---
+
+## Quick Start
+
+Open `pg_project.Rproj` in RStudio (sets the working directory automatically), then:
+
+```r
+source("code/run_all.R")
+```
+
+All tables and figures are written to `tables_latex/` and `figures/`. See [Script Guide](#script-guide) below for what each script produces.
+
+---
+
+## Data and Empirical Setting
+
+**Products:** bananas (PLU 4011), cabbage (PLU 4069), cucumbers (PLU 4062), lettuce (UPC 7143001065), tomatoes (PLU 4087)
+
+**States:** Alabama, Florida, Georgia, Louisiana, Mississippi
+
+**Retailers:** three regional grocery chains (retailer 4 excluded: closed mid-sample)
+
+**Period:** January 2018 – July 2023 (weekly)
+
+**SOE window:** March 2020 – mid-2021 (varies by state)
+
+The figure below shows weekly retail volume and prices across all products and stores. The shaded region marks the pooled SOE window.
+
+![Weekly volume and retail prices](figures/01_fig_volume_and_prices_dual_axis.png)
+
+---
+
+## Variable Construction
+
+The primary retail price is `p_ist_net` — the volume-weighted transaction price (net of promotional discounts). This is the consumer-relevant price and matches the paper's estimating equations. The posted shelf price `p_ist_gross` is retained for robustness and for the promotional expansion mechanism (Section V).
+
+Net and gross prices diverge during the SOE because the share of transactions completed at a promotional price rose from ~8% pre-SOE to ~30% during the SOE. The figure below shows the gross price (blue), net price (red), and wholesale cost (green dashed) for each product in the year before and after SOE activation.
+
+![Price history by product](figures/diag_08_price_step_by_product.png)
+
+**Key variables:**
+
+| Variable | Description |
+|----------|-------------|
+| `p_ist` | Primary retail price (`p_ist_net`: volume-weighted transaction price) |
+| `p_ist_gross` | Volume-weighted posted shelf price |
+| `p_ist_net` | Volume-weighted net price (after promotional discounts) |
+| `w_ist` | Volume-weighted wholesale unit cost |
+| `margin_nom` | Nominal dollar margin = `p_ist` − `w_ist` |
+| `SoE` | 1 if APG enforcement active in state s, week t |
+| `postSoE` | 1 for weeks after SOE deactivation |
+| `Dur_st` | Weeks since SOE activation (0 outside SOE) |
+| `k_start` | Event time relative to SOE start |
+| `share_on_sale` | Fraction of transactions at a promotional price |
+
+**Subscripts:** i = store, j = product, s = state, t = week
+
+---
+
+## Descriptive Evidence
+
+The residualized price trend below removes product and store fixed effects and plots the weekly mean residual. The SOE window is shaded.
+
+![Residualized retail price trend](figures/05_fig_resid_price_pooled.png)
+
+Period means for price, cost, margin, and volume by product are in `tables_latex/04_tab_period_means_nominal.tex`.
+
+---
+
+## Empirical Model and Results
+
+### Price and Margin Level Regressions (Section IV.A–B)
+
+Specification:
+
+```
+P_ist = α + β₁·SOE_st + β₂·postSOE_st + γ_j + δ_i + ε_ist
+```
+
+Fixed effects: product (γ_j) and store (δ_i). Clustering: store level.
+
+![Price regression coefficients](figures/08_fig_price_coef_baseline.png)
+
+State heterogeneity in price effects:
+
+![Price coefficients by state](figures/09_fig_price_coef_state_heterog.png)
+
+### Pass-Through Regressions (Section IV.C)
+
+Specification:
+
+```
+ΔP_ist = α + β₁·Δw_ist + β₂·(Δw_ist × SOE_st) + β₃·(Δw_ist × postSOE_st)
+         + γ_j + δ_i + τ_t + ε_ist
+```
+
+The preferred specification includes week fixed effects (τ_t). The identifying variation — Δw × SOE — varies across stores within a week and is not absorbed by week FEs.
+
+![Pass-through coefficients](figures/12_fig_passthrough_coef.png)
+
+The duration extension asks how many weeks it takes for pass-through to return to baseline after SOE activation:
+
+![Pass-through by enforcement duration](figures/13_fig_passthrough_duration.png)
+
+### Uniform Pricing (Section IV.D)
+
+Within-chain price uniformity is measured as the mean absolute log price difference across store pairs, by retailer-product-week. The regression tests whether uniformity changed during and after the SOE.
+
+![Retail price uniformity by period](figures/16_fig_logdiff_retail_by_period.png)
+
+---
+
+## Mechanisms
+
+### Mechanism 3: Countercyclical Promotional Pricing (Section V)
+
+Retailers use promotional discounts to price discriminate between price-elastic shoppers (deal hunters) and price-inelastic shoppers (who pay the shelf price). If APG laws constrain posted prices, retailers may adjust deal frequency or depth as an alternative margin-management channel.
+
+The gross-to-net price gap — the average per-unit promotional discount — widens during the SOE if deal activity increased:
+
+![Gross-to-net price gap over time](figures/19_fig_gross_net_gap.png)
+
+Promotional intensity (share on sale and discount depth) regressions are in `tables_latex/22_tab_promo_intensity.tex`. Within-store price dispersion regressions (do different shoppers pay different prices on the same day?) are in `tables_latex/23_tab_price_dispersion.tex`. IV pass-through using distance-weighted cross-market costs is in `tables_latex/24_tab_iv_passthrough.tex`.
+
+---
+
+## Script Guide
+
+Scripts are called in order by `run_all.R`. The table below maps each script to the paper section it serves.
+
+| Script | Paper section | Purpose | Key outputs |
+|--------|--------------|---------|-------------|
+| `00_read_in_data.R` | — | Pull product tables from SQL; assemble `panel_upc_week` | `panel_upc_week` in memory |
+| `01_price_sensitivity_diagnostic.R` | Appendix | Compare `p_ist_net` vs `p_ist_gross`; step charts by product | `diag_01`–`diag_08` figures |
+| `02_build_panel.R` | Sec. III | CPI deflation, SOE timing, first differences, trimming | `panel_est`, `save_tex()` |
+| `03_descriptive_tables.R` | Sec. II–III | Coverage tables, period means, flagged-weeks | Tables 01–07, Figs 01–03 |
+| `04_residual_plots.R` | Sec. III.C–E | Residualized trend plots by pool/state/product | Figs 04–07 |
+| `05_regressions.R` | Sec. IV.A–B | Price and margin level regressions | Tables 08–11, Figs 08–11 |
+| `06_passthrough.R` | Sec. IV.C | Pass-through regressions + duration extension | Tables 12–14, Figs 12–13 |
+| `07_uniform_pricing.R` | Sec. IV.D | Within-chain price uniformity | Tables 15–20, Figs 14–18 |
+| `08_demand_rotation.R` | Sec. V | Countercyclical pricing: promo intensity, price dispersion, IV | Tables 21–24, Figs 19–21 |
+
+### Global flags (`run_all.R`)
+
+| Flag | Default | Effect |
+|------|---------|--------|
+| `SAVE_OPTIONAL_PLOTS` | `TRUE` | By-state and by-product residual trend plots |
+| `RETAILERS_KEEP` | `c(2, 3, 5)` | Retailers included (4 excluded) |
+| `RUN_DUR_EXTENSION` | `TRUE` | Pass-through duration extension |
+| `SAVE_CSV` | `FALSE` | Also write intermediate CSVs alongside LaTeX tables |
+
+---
+
+## Output Inventory
+
+### Tables (`tables_latex/`)
+
+| File | Section | Content |
+|------|---------|---------|
+| `01_tab_decadata_summary.tex` | II | Coverage by year |
+| `02_tab_decadata_summary_wide.tex` | II | Coverage by year × retailer × state |
+| `03_tab_product_coverage.tex` | II | Coverage and sales by product |
+| `04_tab_period_means_nominal.tex` | III.A | Period means: nominal price, cost, margin, volume |
+| `05_tab_period_means_real.tex` | III.A | Period means: real prices (supplementary) |
+| `06_tab_flagged_weeks_all.tex` | III.B | APG flag rates across thresholds |
+| `07_tab_flagged_weeks_T25.tex` | III.B | Flag rates at 25% threshold by product |
+| `08_tab_price_reg.tex` | IV.A | Price level regressions |
+| `09_tab_price_reg_state_heterog.tex` | IV.A | Price effects by state |
+| `10_tab_margin_reg.tex` | IV.B | Margin level regressions |
+| `11_tab_margin_reg_state_heterog.tex` | IV.B | Margin effects by state |
+| `12_tab_passthrough_reg.tex` | IV.C | Pass-through: no week FE vs week FE |
+| `13_tab_passthrough_duration.tex` | IV.C | Pass-through duration extension |
+| `14_tab_passthrough_implied_soe.tex` | IV.C | Implied SOE pass-through at selected durations |
+| `15_tab_uniformity_summary_retail.tex` | IV.D | Retail log-diff summary by period |
+| `16_tab_uniformity_summary_wholesale.tex` | IV.D | Wholesale log-diff summary by period |
+| `17_tab_uniformity_retail.tex` | IV.D | Uniformity regressions: retail |
+| `18_tab_uniformity_wholesale.tex` | IV.D | Uniformity regressions: wholesale |
+| `19_tab_uniformity_heterog_retail.tex` | IV.D | Retailer heterogeneity: retail uniformity |
+| `20_tab_uniformity_heterog_wholesale.tex` | IV.D | Retailer heterogeneity: wholesale uniformity |
+| `21_tab_gross_net_gap.tex` | V | SOE effect on gross-to-net price gap |
+| `22_tab_promo_intensity.tex` | V | SOE effect on share on sale and discount depth |
+| `23_tab_price_dispersion.tex` | V | SOE effect on within-store price dispersion |
+| `24_tab_iv_passthrough.tex` | V | IV pass-through: OLS vs demand rotation IV |
+
+### Figures (`figures/`)
+
+| File | Section | Content |
+|------|---------|---------|
+| `diag_06_cost_series.png` | Appendix | Gross price, net price, wholesale cost over time |
+| `diag_08_price_step_by_product.png` | Appendix | Step chart: gross, net, wholesale by product ±1 yr around SOE |
+| `01_fig_volume_and_prices_dual_axis.png` | II | Weekly volume + nominal and real prices |
+| `02_fig_cost_weekly.png` | II | Mean wholesale cost over time |
+| `03_fig_flag_cluster_stacked.png` | III.B | APG flag rates: stacked bar |
+| `04_fig_resid_volume_pooled.png` | III.C | Residualized volume trend |
+| `05_fig_resid_price_pooled.png` | III.C | Residualized nominal price trend |
+| `06_fig_resid_cost_pooled.png` | III.C | Residualized cost trend |
+| `07_fig_resid_margin_pooled.png` | III.C | Residualized margin trend |
+| `08_fig_price_coef_baseline.png` | IV.A | Price regression coefficients |
+| `09_fig_price_coef_state_heterog.png` | IV.A | Price coefficients by state |
+| `10_fig_margin_coef_prepost.png` | IV.B | Margin regression coefficients |
+| `11_fig_margin_coef_state_heterog.png` | IV.B | Margin coefficients by state |
+| `12_fig_passthrough_coef.png` | IV.C | Pass-through: no FE vs week FE |
+| `13_fig_passthrough_duration.png` | IV.C | Implied SOE pass-through by duration |
+| `14_fig_logdiff_retail_pooled.png` | IV.D | Retail log-diff distribution |
+| `15_fig_logdiff_wholesale_pooled.png` | IV.D | Wholesale log-diff distribution |
+| `16_fig_logdiff_retail_by_period.png` | IV.D | Retail log-diff by SOE period |
+| `17_fig_logdiff_wholesale_by_period.png` | IV.D | Wholesale log-diff by SOE period |
+| `18_fig_uniformity_heterog_coef.png` | IV.D | Retailer heterogeneity in uniformity |
+| `19_fig_gross_net_gap.png` | V | Gross-to-net price gap over time |
+| `20_fig_promo_intensity.png` | V | Share on sale and discount depth over time |
+| `21_fig_price_dispersion.png` | V | Within-store price dispersion over time |
+
+---
+
+## Repository Structure
+
+```
+price_gouging/
+├── code/
+│   ├── run_all.R                              # Master script
+│   ├── 00_read_in_data.R                      # SQL pull
+│   ├── 01_price_sensitivity_diagnostic.R      # Price measure diagnostics
+│   ├── 02_build_panel.R                       # Panel construction
+│   ├── 03_descriptive_tables.R                # Sections II–III
+│   ├── 04_residual_plots.R                    # Section III.C–E
+│   ├── 05_regressions.R                       # Sections IV.A–B
+│   ├── 06_passthrough.R                       # Section IV.C
+│   ├── 07_uniform_pricing.R                   # Section IV.D
+│   ├── 08_demand_rotation.R                   # Section V (Mechanism 3)
+│   ├── BuildMarkupsNew_2026_04.sql            # Builds stg.store_upc_week and pos_* tables
+│   ├── BuildMarkupsNew_Consumer_Tables.sql    # Consumer-level transaction diagnostics
+│   └── BuildMarkupsNew_PriceDiscrimination.sql # Builds stg.pd_store_upc_week for Mechanism 3
+├── cpi/
+│   ├── cpi_20152025.xlsx                      # BLS CPI-U (not tracked in git)
+│   └── cpi_rebase.R                           # CPI diagnostic
+├── figures/                                   # PNG outputs
+├── tables_latex/                              # LaTeX table outputs
+│   └── net_price/                             # Net price robustness variants
+└── pg_project.Rproj
+```
+
+---
+
+## SQL Tables
+
+`BuildMarkupsNew_2026_04.sql` builds the weekly store-product panel. `BuildMarkupsNew_PriceDiscrimination.sql` builds the transaction-level promotional pricing panel for Mechanism 3. Run these in SQL Server before sourcing R scripts.
+
+| SQL table | Content | Used by |
+|-----------|---------|---------|
+| `stg.pos_bananas_4011` | Bananas (PLU 4011) weekly panel | `00_read_in_data.R` |
+| `stg.pos_cabbage` | Cabbage (PLU 4069) weekly panel | `00_read_in_data.R` |
+| `stg.pos_cucumbers` | Cucumbers (PLU 4062) weekly panel | `00_read_in_data.R` |
+| `stg.pos_lettuce` | Lettuce (UPC 7143001065) weekly panel | `00_read_in_data.R` |
+| `stg.pos_tomatoes` | Tomatoes (PLU 4087) weekly panel | `00_read_in_data.R` |
+| `stg.date_week_index` | Week sequence to calendar date mapping | `00_read_in_data.R` |
+| `stg.pos_store_master` | Store metadata (lat/lon, state) | `00_read_in_data.R` |
+| `stg.pd_store_upc_week` | Promotional pricing panel (loyalty, sale share, price dispersion) | `08_demand_rotation.R` |
+
+---
+
+## R Packages
+
+```r
+pacman::p_load(
+  DBI, odbc, dbplyr,
+  dplyr, tidyr, lubridate, stringr, purrr,
+  ggplot2, scales,
+  fixest, broom,
+  knitr, kableExtra,
+  readxl, rlang, ggpattern
+)
+```
