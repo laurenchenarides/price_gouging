@@ -1,18 +1,6 @@
-# ==============================================================================
-# 01b_whisker_plots_logs_vs_levels.R
-#
-# Purpose: Compare log (elasticity) vs level ($ per $) pass-through slopes
-#   across event time around the SOE episode using whisker plots.
-#
-# Depends on: panel_est_trim and panel_levels_trim (from apg_analysis.R Sec 4),
-#   fixest, ggplot2, dplyr, tibble.
-#
-# Outputs:
-#   images/whisker_pass_through_eventtime_logs_vs_levels.png
-# ==============================================================================
 
 ## Step 0: build a single event-time variable k_soe
-K <- 30  # window length: ±K weeks around SOE episode
+K <- 30  # window length
 
 ## ------------------------------------------------------------
 ## A) LOGS: build k_soe and restrict to [-K, K] around SoE episode
@@ -53,10 +41,25 @@ df_lvl_es <- panel_levels_trim %>%
   ) %>%
   filter(!is.na(k_soe), k_soe >= -K, k_soe <= K)
 
-## Step 1: estimate slope-by-event-time models
 ref_k <- -1
 
-# Create factor for event time; ref = week before SOE activation
+# Create factor for event time with a chosen reference
+df_log_es <- df_log_es %>%
+  mutate(k_soe_f = relevel(factor(k_soe), ref = as.character(ref_k)))
+
+m_slope_log_es <- feols(
+  dlnp ~ i(k_soe_f, dlnw, ref = as.character(ref_k)) | store_id^category + week_seq,
+  cluster = ~ sst,
+  data = df_log_es
+)
+
+etable(m_slope_log_es)
+
+## Step 1: estimate slope-by-event-time models
+## Logs (elasticity)
+ref_k <- -1
+
+# Create factor for event time with a chosen reference
 df_log_es <- df_log_es %>%
   mutate(k_soe_f = relevel(factor(k_soe), ref = as.character(ref_k)))
 
@@ -81,10 +84,37 @@ m_slope_lvl_es <- feols(
 
 etable(m_slope_lvl_es)
 
-## Step 2: extract implied slopes + CI using linear combinations
-# Re-estimate including an explicit main effect so the slope at ref_k is
-# directly identified as the main-effect coefficient (slope at k = ref_k equals
-# main-effect coefficient; delta from i() terms gives deviations at other k).
+## Step 2: extract implied slopes + CI and plot (whisker) with a 1.0 line
+
+extract_event_slopes <- function(model, k_vals, ref_k = -1, title_label) {
+  b <- coef(model)
+  V <- vcov(model)
+  
+  # Reference slope is the coefficient on the interacted regressor at ref (fixest i() uses naming)
+  # We'll reconstruct slopes by reading the i() coefficients and adding them to the base slope.
+  # In fixest, the base slope appears as the coefficient on dlnw (or dw) ONLY if included.
+  # With i(k, x, ref), the "base" is the slope at ref embedded as the intercept in that interaction.
+  # Easiest: recover slopes by using linear combinations via L vectors.
+  
+  cn <- names(b)
+  
+  # Identify the regressor name used inside i()
+  # We will detect whether it's dlnw or dw from coef names
+  xname <- if (any(grepl("dlnw", cn))) "dlnw" else "dw"
+  
+  # The i() terms look like: "k_soe_f::k#xname"
+  # We'll build linear combos: slope at k = slope at ref + delta(k)
+  # slope at ref is just the base slope at ref (which equals 0 delta by construction).
+  # In fixest's i(), the delta terms are the coefficients themselves.
+  # So slope at k = slope_ref + beta_k, and slope_ref is the omitted category's slope.
+  #
+  # To obtain slope_ref, we can compute it by fitting a model that includes x alone, but
+  # simpler: compute slope_ref using predict-equivalent lincom:
+  # slope at ref_k: set delta terms to 0 -> slope_ref is not directly in coef vector.
+  #
+  # Practical workaround: re-estimate with explicit x main effect + i(k, x, ref)
+  # so the main effect is the slope at ref.
+}
 
 # Re-estimate with explicit main effect so slope at ref is identified directly:
 m_slope_log_es2 <- feols(

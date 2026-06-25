@@ -743,23 +743,20 @@ cost_series_weekly <- panel_diag %>%
   group_by(week_start) %>%
   summarise(
     mean_p_gross = mean(p_ist_gross, na.rm = TRUE),
-    mean_p_net   = mean(p_ist_net, na.rm = TRUE),
     mean_w_ist   = mean(w_ist,       na.rm = TRUE),
     .groups = "drop"
   ) %>%
   pivot_longer(
-    cols      = c(mean_p_gross, mean_p_net, mean_w_ist),
+    cols      = c(mean_p_gross, mean_w_ist),
     names_to  = "series",
     values_to = "value"
   ) %>%
   mutate(
     series = recode(series,
                     mean_p_gross = "Gross price (volume-weighted)",
-                    mean_p_net   = "Net price (volume-weighted)",
                     mean_w_ist   = "Wholesale cost (volume-weighted)"),
     series = factor(series, levels = c(
       "Gross price (volume-weighted)",
-      "Net price (volume-weighted)",
       "Wholesale cost (volume-weighted)"
     ))
   )
@@ -778,22 +775,20 @@ g_cost_series <- ggplot(cost_series_weekly,
   scale_color_manual(
     values = c(
       "Gross price (volume-weighted)"     = "steelblue",
-      "Net price (volume-weighted)"       = "firebrick",
       "Wholesale cost (volume-weighted)"  = "forestgreen"
     )
   ) +
   scale_linetype_manual(
     values = c(
       "Gross price (volume-weighted)"     = "solid",
-      "Net price (volume-weighted)"       = "dashed",
       "Wholesale cost (volume-weighted)"  = "solid"
     )
   ) +
   labs(
-    title    = "Retail price (gross and net) and wholesale cost over time (pooled across products)",
+    title    = "Gross retail price and wholesale cost over time (pooled across products)",
     subtitle = paste0(
       "Shaded region = pooled SOE window.\n",
-      "All series are volume-weighted: total weekly sales or cost divided by total weekly volume."
+      "Both series are volume-weighted: total weekly sales or cost divided by total weekly volume."
     ),
     x        = "Week",
     y        = "Mean price / cost (nominal $)",

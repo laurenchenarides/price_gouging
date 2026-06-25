@@ -1,29 +1,3 @@
-# ==============================================================================
-# 01c_COMPARE_all_df_select_df.R
-#
-# Purpose: Diagnostic comparisons of price series for all perishables vs the
-#   five selected produce UPCs, using various weighting schemes and a fixed-
-#   weight price index. Also includes residualized trend plots (UPC + week FE)
-#   to check whether selected UPCs behave differently from the full sample.
-#
-# Depends on: store_upc_week and cpi_rebased (from apg_analysis.R Secs 1-2),
-#   fixest, ggplot2, dplyr, tidyr, stringr.
-#
-# Selected UPCs: 4011 (bananas), 7143001065 (lettuce), 4065 (peppers),
-#   4062 (cucumbers), 4087 (tomatoes).
-#
-# Outputs (images/):
-#   price_plot_meat_v_perish.png
-#   price_plot_chicken_v_other.png
-#   price_plot_all.png
-#   price_plot_select.png
-#   price_plot_fixed_all_rp.png   price_plot_fixed_all_wp.png
-#   price_plot_fixed_select_rp.png price_plot_fixed_select_wp.png
-#   price_plot_fixed_compare_rp.png
-#   price_plot_resid_select_v_all.png
-#   price_plot_resid_select_v_no_meat.png
-#   price_plot_resid_meat_v_non.png
-# ==============================================================================
 
 # ---- pull stg.store_upc_week ----
 store_upc_week <- dplyr::tbl(con, dbplyr::in_schema("stg", "store_upc_week")) %>%
@@ -343,6 +317,9 @@ print(g_agg_wholesale_select)
 
 # ------------------- Expanded version ----------------------
 
+all_df <- store_upc_week %>%
+  filter(retailer_id != 4)
+
 cat_week <- all_df %>%
   group_by(category, week_start) %>%
   summarise(
@@ -377,6 +354,9 @@ ggplot(cat_week, aes(x = week_start, y = value)) +
   theme_minimal()
 
 # If only a handful of categories are rising sharply, that is probably what is pulling up the all-products line => Looks like this is being driven by meat categories.
+
+all_df <- store_upc_week %>%
+  filter(retailer_id != 4)
 
 all_df <- all_df %>%
   mutate(
@@ -544,6 +524,9 @@ ggplot(compare_comp, aes(x = week_start, y = value, linetype = series)) +
   theme_minimal()
 
 # If those two lines diverge, the increase is being driven partly by changing mix. => They do not diverge.
+
+all_df <- store_upc_week %>%
+  filter(retailer_id != 4)
 
 all_df_select <- all_df %>%
   filter(upc %in% c("4011", "7143001065", "4065", "4062", "4087"))
@@ -724,8 +707,55 @@ selected_upcs <- c("4011", "7143001065", "4065", "4062", "4087")
 # 1) ANALYSIS SAMPLES
 # =========================================================
 
+all_df <- store_upc_week %>%
+  filter(retailer_id != 4)
+
 all_df_select <- all_df %>%
   filter(upc %in% selected_upcs)
+
+# =========================================================
+# 2) SHADED SoE PERIODS
+#    Uses all included observations in the sample
+# =========================================================
+
+make_soe_shading <- function(df, by_retailer = FALSE) {
+  group_vars <- c("week_start")
+  if (by_retailer) group_vars <- c("retailer_id", group_vars)
+  
+  base <- df %>%
+    group_by(across(all_of(group_vars))) %>%
+    summarise(
+      soe_active = as.integer(any(SoE_apg_active == 1, na.rm = TRUE)),
+      .groups = "drop"
+    ) %>%
+    arrange(across(all_of(group_vars)))
+  
+  if (!by_retailer) {
+    base %>%
+      arrange(week_start) %>%
+      mutate(block = cumsum(soe_active != lag(soe_active, default = first(soe_active)))) %>%
+      filter(soe_active == 1) %>%
+      group_by(block) %>%
+      summarise(
+        xmin = min(week_start),
+        xmax = max(week_start) + 7,
+        .groups = "drop"
+      )
+  } else {
+    base %>%
+      arrange(retailer_id, week_start) %>%
+      group_by(retailer_id) %>%
+      mutate(block = cumsum(soe_active != lag(soe_active, default = first(soe_active)))) %>%
+      ungroup() %>%
+      filter(soe_active == 1) %>%
+      group_by(retailer_id, block) %>%
+      summarise(
+        xmin = min(week_start),
+        xmax = max(week_start) + 7,
+        .groups = "drop"
+      )
+  }
+}
 
 # =========================================================
 # 3) FIXED-WEIGHT INDEX BUILDER
@@ -1195,10 +1225,11 @@ ggsave("images/price_plot_fixed_compare_rp.png", g_compare_retail_real, width = 
 
 selected_upcs <- c("4011", "7143001065", "4065", "4062", "4087")
 
-all_df <- all_df %>%
+all_df <- store_upc_week %>%
+  filter(retailer_id != 4) %>%
   mutate(
     upc = as.character(upc),
-
+    
     # Explicit selected-vs-not-selected comparison
     selected_group = case_when(
       upc %in% selected_upcs ~ "Selected UPCs",
@@ -1269,6 +1300,25 @@ resid_week_meat <- reg_df %>%
     soe_active = as.integer(any(SoE_apg_active == 1, na.rm = TRUE)),
     .groups = "drop"
   )
+
+# SOE shading
+make_soe_shading <- function(df) {
+  df %>%
+    group_by(week_start) %>%
+    summarise(
+      soe_active = as.integer(any(SoE_apg_active == 1, na.rm = TRUE)),
+      .groups = "drop"
+    ) %>%
+    arrange(week_start) %>%
+    mutate(block = cumsum(soe_active != lag(soe_active, default = first(soe_active)))) %>%
+    filter(soe_active == 1) %>%
+    group_by(block) %>%
+    summarise(
+      xmin = min(week_start),
+      xmax = max(week_start) + 7,
+      .groups = "drop"
+    )
+}
 
 shade_all <- make_soe_shading(reg_df)
 

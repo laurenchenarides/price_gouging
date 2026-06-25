@@ -1,8 +1,5 @@
 # ==============================================================================
-# apg_analysis.R  [DEPRECATED -- use run_all.R]
-#
-# This script has been split into numbered scripts for clarity.
-# To reproduce all results, run:  source("code/run_all.R")
+# apg_analysis.R
 #
 # Anti-Price Gouging Laws and Retailer Pricing Behavior During COVID-19
 # Chenarides, Richards, and Dong
@@ -59,9 +56,7 @@
 
 rm(list = ls())
 
-# Set the working directory to the project root if not using pg_project.Rproj.
-# Opening pg_project.Rproj in RStudio sets this automatically.
-# setwd("/path/to/price_gouging")
+setwd("D:/Data/Lauren-Tim/02_Code/R/pg_project")
 
 if (!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman")
 pacman::p_load(
