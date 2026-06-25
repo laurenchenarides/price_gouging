@@ -27,9 +27,11 @@
 # w_ist is replaced with the median w_ist for peppers in the two adjacent weeks
 # ($0.52/lb), which is consistent with the surrounding five-week window.
 #
-# Primary price variable: p_ist is set to p_ist_gross throughout.
-# p_ist_gross uses posted shelf revenue and is not affected by deal-mix shifts
-# during the SOE period. p_ist_net serves as a robustness check.
+# Primary price variable: p_ist is set to p_ist_net (volume-weighted transaction
+# price) for all main regressions. This is the consumer-relevant price and
+# matches the paper's estimating equations.
+# p_ist_gross (posted shelf price) is retained for the promotional expansion
+# robustness check in Mechanism 3.
 # ==============================================================================
 
 panel_upc_week <- panel_upc_week %>%
@@ -49,7 +51,10 @@ panel_upc_week <- panel_upc_week %>%
       0.52,
       w_ist
     ),
-    p_ist = p_ist_gross
+    # Net price is the primary variable for all main regressions.
+    # Gross price is retained for the promotional expansion robustness check
+    # (Mechanism 3) and the diagnostic figures.
+    p_ist = p_ist_net
   )
 
 # ==============================================================================

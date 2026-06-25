@@ -13,8 +13,9 @@
 # beta2: change in pass-through during SOE
 # beta3: change in pass-through after SOE ends
 #
-# Preferred specification is without week FEs: all five states have overlapping
-# SOE windows, so within-week cross-state variation in SOE status is limited.
+# Preferred specification includes week FEs (column 2). The identifying variation
+# is Delta_w * SOE, which varies across stores within a week and is not absorbed
+# by week fixed effects. The no-FE version is also reported for sensitivity.
 #
 # Depends on: panel_est, save_tex(), SAVE_CSV, RUN_DUR_EXTENSION
 #

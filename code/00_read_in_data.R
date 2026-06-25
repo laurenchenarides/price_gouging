@@ -7,7 +7,7 @@
 #
 # Unit of observation: store_id x product x week_seq
 #
-# Products pulled: bananas, lettuce, peppers, cucumbers, tomatoes
+# Products pulled: bananas, lettuce, cabbage, cucumbers, tomatoes, peppers (removed this due to very low purchase quantities)
 #
 # This script is run once. The output panel is used by 01_deflate_and_construct.R.
 # SQL connection details are omitted for privacy; supply odbc driver string below.
@@ -35,9 +35,10 @@ con <- dbConnect(
 tbl_map <- c(
   bananas   = "pos_bananas_4011",
   lettuce   = "pos_lettuce",
-  peppers   = "pos_peppers",
+#  peppers   = "pos_peppers",
   cucumbers = "pos_cucumbers",
-  tomatoes  = "pos_tomatoes"
+  tomatoes  = "pos_tomatoes",
+  cabbage   = "pos_cabbage"
 )
 
 

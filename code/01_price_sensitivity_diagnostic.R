@@ -101,154 +101,6 @@ spike_by_product <- panel_diag %>%
 
 print(spike_by_product)
 
-# Check w_ist for peppers in the spike week
-panel_diag %>%
-  filter(product == "peppers", week_start == as.Date("2019-05-27")) %>%
-  arrange(desc(w_ist)) %>%
-  select(week_start, product, store_id, retailer_id, sst,
-         p_ist_gross, p_ist_net, avg_unit_price, w_ist,
-         upc_week_volume, upc_week_total_cost) %>%
-  print(n = 20)
-
-# ------------------------------------------------------------------------------
-# Price artifact correction: peppers, week of 2019-05-27
-#
-# volume-weighted prices (p_ist_gross, p_ist_net) are inflated for peppers
-# in this week due to near-zero volume denominators in a subset of stores.
-# The posted shelf price (avg_unit_price) is ~$1.02 and is unaffected by
-# the volume artifact. For this week and product only, replace p_ist_gross
-# and p_ist_net with avg_unit_price.
-#
-# This correction is applied to panel_diag only and does not affect
-# panel_upc_week or the main estimation panel. If the main regressions
-# are also sensitive to this artifact, apply the same correction there.
-# ------------------------------------------------------------------------------
-
-panel_diag <- panel_diag %>%
-  mutate(
-    p_ist_gross = if_else(
-      product == "peppers" & week_start == as.Date("2019-05-27"),
-      avg_unit_price,
-      p_ist_gross
-    ),
-    p_ist_net = if_else(
-      product == "peppers" & week_start == as.Date("2019-05-27"),
-      avg_unit_price,
-      p_ist_net
-    ),
-    # Recompute margins after price correction
-    margin_gross = p_ist_gross - w_ist,
-    margin_net   = p_ist_net   - w_ist
-  )
-
-# Verify correction: mean gross price for peppers in spike week should now
-# be close to avg_unit_price (~$1.02)
-panel_diag %>%
-  filter(product == "peppers", week_start == as.Date("2019-05-27")) %>%
-  summarise(
-    mean_p_gross   = mean(p_ist_gross,   na.rm = TRUE),
-    mean_p_net     = mean(p_ist_net,     na.rm = TRUE),
-    mean_avg_price = mean(avg_unit_price, na.rm = TRUE)
-  ) %>%
-  print()
-
-# ------------------------------------------------------------------------------
-# Cost artifact correction: peppers, week of 2019-05-27
-#
-# w_ist is inflated by near-zero volume denominators (e.g., w_ist = $226/lb
-# when upc_week_volume = 0.36 lbs). The posted price (avg_unit_price ~$1.02)
-# is unaffected because it does not use volume as a denominator.
-# There is no direct posted-cost equivalent to substitute, so w_ist is
-# replaced with the median w_ist for peppers in the immediately adjacent
-# weeks (one week before and one week after 2019-05-27).
-# ------------------------------------------------------------------------------
-
-spike_date <- as.Date("2019-05-27")
-
-# Identify the adjacent week_start values
-adjacent_weeks <- panel_diag %>%
-  filter(product == "peppers") %>%
-  distinct(week_start) %>%
-  arrange(week_start) %>%
-  mutate(rank = row_number()) %>%
-  filter(week_start == spike_date |
-           week_start == lag(week_start,  1) & lead(week_start, 1) == spike_date |
-           week_start == lead(week_start, 1) & lag(week_start,  1) == spike_date)
-
-# Simpler: just find the week before and after directly
-week_before <- panel_diag %>%
-  filter(product == "peppers", week_start < spike_date) %>%
-  summarise(week_start = max(week_start)) %>%
-  pull(week_start)
-
-week_after <- panel_diag %>%
-  filter(product == "peppers", week_start > spike_date) %>%
-  summarise(week_start = min(week_start)) %>%
-  pull(week_start)
-
-message("Replacing spike week cost using adjacent weeks: ", week_before, " and ", week_after)
-
-# Compute median w_ist for peppers in the two adjacent weeks
-w_replacement <- panel_diag %>%
-  filter(product == "peppers",
-         week_start %in% c(week_before, week_after),
-         w_ist > 0, !is.na(w_ist)) %>%
-  summarise(w_median = median(w_ist, na.rm = TRUE)) %>%
-  pull(w_median)
-
-message("Replacement w_ist value: ", round(w_replacement, 4))
-
-# Apply correction
-panel_diag <- panel_diag %>%
-  mutate(
-    w_ist = if_else(
-      product == "peppers" & week_start == spike_date,
-      w_replacement,
-      w_ist
-    ),
-    # Recompute margins after cost correction
-    margin_gross = p_ist_gross - w_ist,
-    margin_net   = p_ist_net   - w_ist
-  )
-
-# Verify
-panel_diag %>%
-  filter(product == "peppers", week_start == spike_date) %>%
-  summarise(
-    mean_w        = mean(w_ist,        na.rm = TRUE),
-    mean_margin_g = mean(margin_gross, na.rm = TRUE),
-    mean_margin_n = mean(margin_net,   na.rm = TRUE)
-  ) %>%
-  print()
-
-# Check w_ist for peppers in the five weeks before and after the spike week
-# to confirm the replacement value is reasonable relative to adjacent observations
-
-weeks_around_spike <- panel_diag %>%
-  filter(product == "peppers") %>%
-  distinct(week_start) %>%
-  arrange(week_start) %>%
-  mutate(rank = row_number()) %>%
-  filter(rank >= (which(.$week_start == spike_date) - 5) &
-           rank <= (which(.$week_start == spike_date) + 5)) %>%
-  pull(week_start)
-
-panel_diag %>%
-  filter(product == "peppers",
-         week_start %in% weeks_around_spike) %>%
-  group_by(week_start) %>%
-  summarise(
-    n_stores    = n(),
-    mean_w      = mean(w_ist,  na.rm = TRUE),
-    median_w    = median(w_ist, na.rm = TRUE),
-    min_w       = min(w_ist,   na.rm = TRUE),
-    max_w       = max(w_ist,   na.rm = TRUE),
-    is_spike_wk = first(week_start == spike_date),
-    .groups     = "drop"
-  ) %>%
-  arrange(week_start) %>%
-  print()
-
 # ------------------------------------------------------------------------------
 # Table 1: Sale share by period and product
 # This is the most direct evidence that the net/gross distinction matters.
@@ -732,10 +584,10 @@ message("Saved: figures/diag_05_margin_gap_over_time.png")
 
 
 # ------------------------------------------------------------------------------
-# Figure: Wholesale cost over time (pooled across products)
-# w_ist is the volume-weighted unit wholesale cost: total weekly acquisition
-# cost divided by total weekly volume. Plotted alongside the gross price
-# to show the evolution of the retail-wholesale spread over time.
+# Figure diag_06: Gross price, net price, and wholesale cost over time (pooled)
+# Shows three series: gross (posted shelf), net (transaction), and wholesale cost.
+# The divergence between gross and net during the SOE reflects the increase in
+# the share of transactions completed at promotional prices.
 # ------------------------------------------------------------------------------
 
 cost_series_weekly <- panel_diag %>%
@@ -743,7 +595,7 @@ cost_series_weekly <- panel_diag %>%
   group_by(week_start) %>%
   summarise(
     mean_p_gross = mean(p_ist_gross, na.rm = TRUE),
-    mean_p_net   = mean(p_ist_net, na.rm = TRUE),
+    mean_p_net   = mean(p_ist_net,   na.rm = TRUE),
     mean_w_ist   = mean(w_ist,       na.rm = TRUE),
     .groups = "drop"
   ) %>%
@@ -785,7 +637,7 @@ g_cost_series <- ggplot(cost_series_weekly,
   scale_linetype_manual(
     values = c(
       "Gross price (volume-weighted)"     = "solid",
-      "Net price (volume-weighted)"       = "dashed",
+      "Net price (volume-weighted)"       = "solid",
       "Wholesale cost (volume-weighted)"  = "solid"
     )
   ) +
@@ -891,6 +743,101 @@ g_cost_series
 ggsave("figures/diag_07_cost_series_comparison.png", g_cost_series,
        width = 10, height = 5, dpi = 300)
 message("Saved: figures/diag_07_cost_series_comparison.png")
+
+# ------------------------------------------------------------------------------
+# Figure diag_08: Step chart — gross vs net price by product, ±1 year around
+# SOE activation (styled after Amazon Price History)
+#
+# Window: 52 weeks before the earliest SOE start through 52 weeks after.
+# Each step reflects the weekly mean volume-weighted price across all stores
+# carrying that product. Shaded region = first 52 weeks of SOE window.
+# ------------------------------------------------------------------------------
+
+soe_first_start <- min(panel_diag$apg_start_date[panel_diag$SoE == 1], na.rm = TRUE)
+step_window_start <- soe_first_start - 365L
+step_window_end   <- soe_first_start + 365L
+
+step_data <- panel_diag %>%
+  filter(
+    p_ist_gross > 0, p_ist_net > 0, w_ist > 0,
+    week_start >= step_window_start,
+    week_start <= step_window_end,
+    # Exclude near-zero-volume observations that produce implausibly high
+    # revenue-weighted prices (same artifact as the documented 2019-05-27 spike).
+    # Threshold: at least 2 units/lbs sold in the week.
+    upc_week_volume >= 2
+  ) %>%
+  group_by(product, week_start) %>%
+  summarise(
+    mean_p_gross = mean(p_ist_gross, na.rm = TRUE),
+    mean_p_net   = mean(p_ist_net,   na.rm = TRUE),
+    mean_w_ist   = mean(w_ist,       na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  pivot_longer(
+    cols      = c(mean_p_gross, mean_p_net, mean_w_ist),
+    names_to  = "series",
+    values_to = "value"
+  ) %>%
+  mutate(
+    series  = recode(series,
+                     mean_p_gross = "Gross (posted shelf)",
+                     mean_p_net   = "Net (transaction)",
+                     mean_w_ist   = "Wholesale cost"),
+    series  = factor(series, levels = c("Gross (posted shelf)", "Net (transaction)", "Wholesale cost")),
+    product = stringr::str_to_title(product)
+  )
+
+g_price_step <- ggplot(step_data,
+                       aes(x = week_start, y = value, color = series, linetype = series)) +
+  annotate("rect",
+           xmin  = soe_first_start,
+           xmax  = step_window_end,
+           ymin  = -Inf, ymax = Inf,
+           alpha = 0.10, fill = "grey50") +
+  geom_vline(xintercept = as.numeric(soe_first_start),
+             linetype = "dashed", linewidth = 0.4, color = "grey40") +
+  geom_step(linewidth = 0.65) +
+  scale_color_manual(values = c(
+    "Gross (posted shelf)" = "steelblue",
+    "Net (transaction)"    = "firebrick",
+    "Wholesale cost"       = "forestgreen"
+  )) +
+  scale_linetype_manual(values = c(
+    "Gross (posted shelf)" = "solid",
+    "Net (transaction)"    = "solid",
+    "Wholesale cost"       = "dashed"
+  )) +
+  scale_x_date(date_breaks = "3 months", date_labels = "%b '%y") +
+  facet_wrap(~ product, scales = "free_y", ncol = 2) +
+  labs(
+    title    = "Retail price history by product: gross, net, and wholesale (1 year before and after SOE activation)",
+    subtitle = paste0(
+      "Step chart: weekly mean volume-weighted price across stores. ",
+      "Dashed line = first SOE activation (", format(soe_first_start, "%b %d, %Y"), "). ",
+      "Shaded region = SOE window.\n",
+      "Blue = gross (posted shelf). Red = net (transaction, after discounts). ",
+      "Green dashed = wholesale cost. Divergence of blue/red reflects deal-mix shift during the SOE."
+    ),
+    x        = NULL,
+    y        = "Mean price / cost (nominal $ per unit or lb)",
+    color    = NULL,
+    linetype = NULL
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position  = "top",
+    plot.subtitle    = element_text(size = 8),
+    strip.text       = element_text(face = "bold", size = 10),
+    axis.text.x      = element_text(angle = 30, hjust = 1, size = 8),
+    panel.spacing    = unit(1, "lines")
+  )
+
+g_price_step
+
+ggsave("figures/diag_08_price_step_by_product_with_cost.png", g_price_step,
+       width = 12, height = 10, dpi = 300)
+message("Saved: figures/diag_08_price_step_by_product.png")
 
 
 message("Price sensitivity diagnostic complete.")
