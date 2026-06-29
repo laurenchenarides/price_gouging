@@ -1,7 +1,9 @@
 # ==============================================================================
 # 06_passthrough.R
 #
-# Purpose: Section IV.C pass-through regressions and optional duration extension.
+# Mechanisms: Mechanism 2 (Variation in Pass-Through)
+#
+# Purpose: Pass-through regressions and optional duration extension.
 #   11.  Baseline pass-through (with and without week FEs)
 #   11a. Optional: duration extension (Dur_wk interaction)
 #
@@ -17,6 +19,19 @@
 # is Delta_w * SOE, which varies across stores within a week and is not absorbed
 # by week fixed effects. The no-FE version is also reported for sensitivity.
 #
+# Duration extension specification:
+#   Delta_P_ist = alpha + beta1*Delta_w + beta2*(Delta_w*SOE) +
+#                 beta3*(Delta_w*SOE*Dur_wk) + beta4*(Delta_w*postSOE)
+#                 + gamma_j + delta_i + tau_t
+#
+# Week FEs are included in the duration model. The identifying variation for
+# Delta_w*SOE*Dur_wk is cross-state: within a given calendar week, states that
+# entered the SOE at different dates will be at different values of Dur_wk.
+# This variation is not absorbed by week FEs.
+#
+# Implied SOE pass-through at duration d = beta1 + beta2 + beta3*d.
+# Return to baseline at d* = -beta2 / beta3.
+#
 # Depends on: panel_est, save_tex(), SAVE_CSV, RUN_DUR_EXTENSION
 #
 # Outputs (tables_latex/):
@@ -29,7 +44,7 @@
 #   13_fig_passthrough_duration.png      (if RUN_DUR_EXTENSION)
 # ==============================================================================
 
-message("Estimating Section IV.C pass-through regressions ...")
+message("Estimating Mechanism 2 pass-through regressions ...")
 
 pt_data <- panel_est %>%
   filter(is.finite(p_ist), is.finite(margin_nom),
@@ -37,7 +52,7 @@ pt_data <- panel_est %>%
 
 
 # ==============================================================================
-# 11. SECTION IV.C: PASS-THROUGH REGRESSIONS
+# 11. BASELINE PASS-THROUGH REGRESSIONS
 # ==============================================================================
 
 m_pt_no_fe <- feols(
@@ -108,26 +123,28 @@ message("Saved: figures/12_fig_passthrough_coef.png")
 # ==============================================================================
 # 11a. EXTENSION: PASS-THROUGH BY DURATION
 # ==============================================================================
-# Adds a three-way interaction dW*SOE*Dur_wk to ask how many weeks it takes
-# for retailers to return to pre-SOE pass-through after enforcement begins.
+# Adds a three-way interaction dW*SOE*Dur_wk to ask how pass-through evolves
+# as enforcement continues. Week FEs are included; the duration effect is
+# identified through cross-state variation: within a calendar week, states that
+# entered the SOE at different dates are at different values of Dur_wk.
 #
 # Implied SOE pass-through at duration d = beta1 + beta2 + beta3*d.
 # Return to baseline at d* = -beta2 / beta3.
 # ==============================================================================
 
 if (RUN_DUR_EXTENSION) {
-
-  message("Estimating optional duration extension (Section 11a) ...")
-
+  
+  message("Estimating duration extension (Mechanism 2) ...")
+  
   pt_dur_data <- pt_data %>%
     filter(is.finite(Dur_st)) %>%
     mutate(Dur_wk = as.numeric(Dur_st))
-
+  
   m_pt_dur <- feols(
-    dP ~ dW + dW:SoE + dW:SoE:Dur_wk + dW:postSoE | product + store_id,
+    dP ~ dW + dW:SoE + dW:SoE:Dur_wk + dW:postSoE | product + store_id + week_fe,
     data = pt_dur_data, cluster = ~ store_id
   )
-
+  
   etable(
     list("(1)" = m_pt_dur),
     tex     = TRUE,
@@ -142,15 +159,18 @@ if (RUN_DUR_EXTENSION) {
       "dW:postSoE"    = "$\\Delta w_{ist} \\times postSOE_{st}$"
     ),
     notes = c(
-      "Dependent variable: nominal $\\Delta p_{ist}$. No week FEs.",
-      "$Dur^{wk}_{st}$ = weeks since SOE activation in state $g$, set to 0 outside SOE.",
+      "Dependent variable: nominal $\\Delta p_{ist}$.",
+      "Includes product, store, and week fixed effects.",
+      "$Dur^{wk}_{st}$ = weeks since SOE activation in state $s$, set to 0 outside SOE.",
+      "Duration effect identified through cross-state variation: within a calendar week,",
+      "states that entered the SOE on different dates are at different values of $Dur^{wk}_{st}$.",
       "The implied SOE pass-through at duration $d$ is $\\hat{\\beta}_1 + \\hat{\\beta}_2 + \\hat{\\beta}_3 d$.",
       "Retailers return to baseline pass-through at $d^* = -\\hat{\\beta}_2 / \\hat{\\beta}_3$ weeks.",
       "Standard errors clustered at the store level."
     )
   )
   message("Saved: tables_latex/13_tab_passthrough_duration.tex")
-
+  
   lincombo_ci <- function(model, L_vec, alpha = 0.05) {
     b  <- coef(model)
     V  <- vcov(model)
@@ -163,26 +183,26 @@ if (RUN_DUR_EXTENSION) {
     data.frame(estimate = est, se = se,
                conf.low = est - z * se, conf.high = est + z * se)
   }
-
+  
   d_vals <- seq(0, 70, by = 4)
-
+  
   pt_implied <- purrr::map_dfr(d_vals, function(d) {
     L <- list("dW" = 1, "dW:SoE" = 1, "dW:SoE:Dur_wk" = d)
     cbind(data.frame(Dur_wk = d), round(lincombo_ci(m_pt_dur, L), 3))
   })
-
+  
   if (SAVE_CSV) write.csv(pt_implied, "tables_csv/08_tab_passthrough_implied_soe.csv", row.names = FALSE)
-
+  
   save_tex(
     kbl(pt_implied,
         format = "latex", booktabs = TRUE,
-        caption = "Implied SOE pass-through at selected enforcement durations. Computed as $\\hat{\\beta}_1 + \\hat{\\beta}_2 + \\hat{\\beta}_3 d$ from the duration model. $Dur^{wk}$ = weeks since SOE activation.",
+        caption = "Implied SOE pass-through at selected enforcement durations. Computed as $\\hat{\\beta}_1 + \\hat{\\beta}_2 + \\hat{\\beta}_3 d$ from the duration model with week fixed effects. $Dur^{wk}$ = weeks since SOE activation.",
         label   = "tab:passthrough_implied_soe",
         align   = "rrrrr") %>%
       kable_styling(latex_options = c("hold_position")),
     "14_tab_passthrough_implied_soe.tex"
   )
-
+  
   g_pt_dur <- ggplot(pt_implied, aes(x = Dur_wk, y = estimate)) +
     geom_hline(yintercept = coef(m_pt_dur)[["dW"]], linetype = "dashed", color = "grey40") +
     geom_point(size = 2) +
@@ -193,17 +213,17 @@ if (RUN_DUR_EXTENSION) {
              label = "Baseline (pre-SOE)", size = 3, color = "grey40") +
     labs(
       title    = "Implied SOE pass-through by enforcement duration",
-      subtitle = "Dashed line = pre-SOE baseline. Points are linear combinations from the duration model.",
+      subtitle = "Dashed line = pre-SOE baseline. Points are linear combinations from the duration model (week FEs included).",
       x        = "Weeks since SOE activation",
       y        = "Implied pass-through (Delta p / Delta w)"
     ) +
     theme_bw() +
     theme(plot.subtitle = element_text(size = 8))
-
+  
   ggsave("figures/13_fig_passthrough_duration.png", g_pt_dur,
          width = 8, height = 5, dpi = 300)
   message("Saved: figures/13_fig_passthrough_duration.png")
-
+  
 }
 
 message("Pass-through regressions complete.")
