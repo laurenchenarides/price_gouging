@@ -260,6 +260,7 @@ price_gouging/
 | `stg.pos_tomatoes` | Tomatoes (PLU 4087) weekly panel | `00_read_in_data.R` |
 | `stg.date_week_index` | Week sequence to calendar date mapping | `00_read_in_data.R` |
 | `stg.pos_store_master` | Store metadata (lat/lon, state) | `00_read_in_data.R` |
+| `stg.pd_store_upc_day` | Daily loyalty-card transaction panel (built by BuildMarkupsNew_PriceDiscrimination.sql; intermediate for weekly rollup) | --- |
 | `stg.pd_store_upc_week` | Promotional pricing panel (loyalty, sale share, price dispersion) | `08_demand_rotation.R` |
 
 ---

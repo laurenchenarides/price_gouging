@@ -532,8 +532,8 @@ to return to baseline after SOE activation:</p>
 <div class="figcaption">Pass-through by enforcement duration</div>
 </div>
 </div>
-<div id="mechanism-3-countercyclical-promotional-pricing-section-v" class="section level3">
-<h3>Mechanism 3: Countercyclical Promotional Pricing (Section V)</h3>
+<div id="mechanism-3-countercyclical-promotional-pricing" class="section level3">
+<h3>Mechanism 3: Countercyclical Promotional Pricing</h3>
 <p>Retailers use promotional discounts to price discriminate between
 price-elastic shoppers (deal hunters) and price-inelastic shoppers (who
 pay the shelf price). If APG laws constrain posted prices, retailers may
@@ -959,12 +959,12 @@ charts by product</td>
 │   ├── 00_read_in_data.R                      # SQL pull
 │   ├── 01_price_sensitivity_diagnostic.R      # Price measure diagnostics
 │   ├── 02_build_panel.R                       # Panel construction
-│   ├── 03_descriptive_tables.R                # Sections II–III
-│   ├── 04_residual_plots.R                    # Section III.C–E
-│   ├── 05_regressions.R                       # Sections IV.A–B
-│   ├── 06_passthrough.R                       # Section IV.C
-│   ├── 07_uniform_pricing.R                   # Section IV.D
-│   ├── 08_demand_rotation.R                   # Section V (Mechanism 3)
+│   ├── 03_descriptive_tables.R                # Section 4.1
+│   ├── 04_residual_plots.R                    # TBD
+│   ├── 05_regressions.R                       # Sections 4.2 and 4.3 
+│   ├── 06_passthrough.R                       # Section 5.2
+│   ├── 07_uniform_pricing.R                   # Section 5.1
+│   ├── 08_demand_rotation.R                   # Section 5.3
 │   ├── BuildMarkupsNew_2026_04.sql            # Builds stg.store_upc_week and pos_* tables
 │   ├── BuildMarkupsNew_Consumer_Tables.sql    # Consumer-level transaction diagnostics
 │   └── BuildMarkupsNew_PriceDiscrimination.sql # Builds stg.pd_store_upc_week for Mechanism 3
@@ -1034,6 +1034,13 @@ in SQL Server before sourcing R scripts.</p>
 <td><code>00_read_in_data.R</code></td>
 </tr>
 <tr class="even">
+<td><code>stg.pd_store_upc_day</code></td>
+<td>Daily loyalty-card transaction panel (built by
+BuildMarkupsNew_PriceDiscrimination.sql; intermediate for weekly
+rollup)</td>
+<td>—</td>
+</tr>
+<tr class="odd">
 <td><code>stg.pd_store_upc_week</code></td>
 <td>Promotional pricing panel (loyalty, sale share, price
 dispersion)</td>
