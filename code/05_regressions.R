@@ -1,7 +1,7 @@
 # ==============================================================================
 # 05_regressions.R
 #
-# Purpose: Section IV.A-B price and margin level regressions.
+# Purpose: Price and margin level regressions.
 #   9.  Price level regressions (baseline and state heterogeneity)
 #   10. Margin level regressions (baseline and state heterogeneity)
 #
@@ -20,14 +20,14 @@
 #   11_fig_margin_coef_state_heterog.png
 # ==============================================================================
 
-message("Estimating Section IV.A price level regressions ...")
+message("Estimating price level regressions ...")
 
 reg_data <- panel_est %>%
   filter(is.finite(p_ist), is.finite(margin_nom))
 
 
 # ==============================================================================
-# 9. SECTION IV.A: PRICE LEVEL REGRESSIONS
+# 9. PRICE LEVEL REGRESSIONS
 # ==============================================================================
 # Specification:
 #   P_ist = alpha + beta1*SOE_st + beta2*postSOE_st + gamma_i + delta_s
@@ -194,13 +194,13 @@ message("Saved: figures/09_fig_price_coef_state_heterog.png")
 
 
 # ==============================================================================
-# 10. SECTION IV.B: MARGIN LEVEL REGRESSIONS
+# 10. MARGIN LEVEL REGRESSIONS
 # ==============================================================================
 # Outcome: margin_nom = p_ist - w_ist (nominal dollar margin).
-# Same FE and clustering as Section IV.A.
+# Same FE and clustering as price regressions.
 # ==============================================================================
 
-message("Estimating Section IV.B margin level regressions ...")
+message("Estimating margin level regressions ...")
 
 m_margin_soe <- feols(
   margin_nom ~ SoE | product + store_id,

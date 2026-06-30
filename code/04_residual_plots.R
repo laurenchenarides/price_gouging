@@ -1,12 +1,12 @@
 # ==============================================================================
 # 04_residual_plots.R
 #
-# Purpose: Section III.C-E residualized trend plots.
+# Purpose: Residualized trend plots.
 #   For each outcome, regress on product and store fixed effects; recover
 #   residuals; plot the weekly mean residual over time.
 #
-# Pooled plots (III.C) are the main paper outputs.
-# By-state (III.D) and by-product (III.E) are produced when
+# Pooled plots are the main paper outputs.
+# By-state and by-product are produced when
 # SAVE_OPTIONAL_PLOTS is TRUE.
 #
 # Depends on: panel_est (from 02_build_panel.R), SAVE_OPTIONAL_PLOTS
@@ -20,7 +20,7 @@
 #   fig_resid_*_by_product.png   (when SAVE_OPTIONAL_PLOTS = TRUE)
 # ==============================================================================
 
-message("Building Section III.C-E residualized trend plots ...")
+message("Building residualized trend plots ...")
 
 panel_resid <- panel_est %>%
   filter(upc_week_volume > 0,

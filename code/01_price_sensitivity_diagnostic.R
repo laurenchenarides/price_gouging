@@ -26,7 +26,7 @@
 #   figures/diag_05_margin_gap_over_time.png
 #   figures/diag_06_cost_series.png
 #   figures/diag_07_cost_series_comparison.png
-#   figures/diag_08_price_step_by_product.png
+#   figures/diag_08_price_step_by_product_with_cost.png
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
@@ -735,10 +735,10 @@ step_data <- panel_diag %>%
   ) %>%
   mutate(
     series  = recode(series,
-                     mean_p_gross = "Gross (posted shelf)",
-                     mean_p_net   = "Net (transaction)",
+                     mean_p_gross = "Posted shelf price",
+                     mean_p_net   = "Transaction (net) price",
                      mean_w_ist   = "Wholesale cost"),
-    series  = factor(series, levels = c("Gross (posted shelf)", "Net (transaction)", "Wholesale cost")),
+    series  = factor(series, levels = c("Posted shelf price", "Transaction (net) price", "Wholesale cost")),
     product = stringr::str_to_title(product)
   )
 
@@ -753,24 +753,24 @@ g_price_step <- ggplot(step_data,
              linetype = "dashed", linewidth = 0.4, color = "grey40") +
   geom_step(linewidth = 0.65) +
   scale_color_manual(values = c(
-    "Gross (posted shelf)" = "steelblue",
-    "Net (transaction)"    = "firebrick",
-    "Wholesale cost"       = "forestgreen"
+    "Posted shelf price" = "grey70",
+    "Transaction (net) price"    = "black",
+    "Wholesale cost"       = "black"
   )) +
   scale_linetype_manual(values = c(
-    "Gross (posted shelf)" = "solid",
-    "Net (transaction)"    = "solid",
+    "Posted shelf price" = "solid",
+    "Transaction (net) price"    = "solid",
     "Wholesale cost"       = "dashed"
   )) +
   scale_x_date(date_breaks = "3 months", date_labels = "%b '%y") +
   facet_wrap(~ product, scales = "free_y", ncol = 2) +
   labs(
-    title    = "Retail price history by product: gross, net, and wholesale (1 year before and after SOE activation)",
+    title    = "Retail price history by product: shelf, net, and wholesale (1 year before and after SOE activation)",
     subtitle = paste0(
       "Step chart: weekly mean volume-weighted price across stores. ",
       "Dashed line = first SOE activation (", format(soe_first_start, "%b %d, %Y"), "). ",
       "Shaded region = SOE window.\n",
-      "Blue = gross (posted shelf). Red = net (transaction, after discounts). ",
+      "Blue = posted shelf price. Red = net (transaction, after discounts). ",
       "Green dashed = wholesale cost. Divergence of blue/red reflects deal-mix shift during the SOE."
     ),
     x        = NULL,
@@ -791,7 +791,7 @@ g_price_step
 
 ggsave("figures/diag_08_price_step_by_product_with_cost.png", g_price_step,
        width = 12, height = 10, dpi = 300)
-message("Saved: figures/diag_08_price_step_by_product.png")
+message("Saved: figures/diag_08_price_step_by_product_with_cost.png")
 
 
 message("Price sensitivity diagnostic complete.")

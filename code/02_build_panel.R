@@ -2,7 +2,7 @@
 # 02_build_panel.R
 #
 # Purpose: Build the estimation panel from the raw SQL pull.
-#   1b. Data corrections and primary price variable assignment
+#   1.  Data corrections and primary price variable assignment
 #   2.  CPI deflation and variable construction
 #   3.  SOE timing, duration, and event-time indices
 #   4.  Weekly first differences and outlier trimming
@@ -18,7 +18,7 @@
 
 
 # ==============================================================================
-# 1b. PRIMARY PRICE VARIABLE ASSIGNMENT
+# 1. PRIMARY PRICE VARIABLE ASSIGNMENT
 # ==============================================================================
 # p_ist is set to p_ist_net (volume-weighted transaction price) for all main
 # regressions. This is the consumer-relevant price and matches the paper's

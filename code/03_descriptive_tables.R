@@ -1,10 +1,10 @@
 # ==============================================================================
 # 03_descriptive_tables.R
 #
-# Purpose: Produce all Section II and III tables and figures.
-#   5.  Section II: DecaData summary, product coverage (Tables II.A-C, Figs II.A-B)
-#   6.  Section III.A: period means (nominal main, real supplementary)
-#   7.  Section III.B: flagged-weeks table and stacked bar figure
+# Purpose: Produce all descriptive tables and figures.
+#   5.  DecaData summary, product coverage (Tables II.A-C, Figs II.A-B)
+#   6.  Period means (nominal main, real supplementary)
+#   7.  Flagged-weeks table and stacked bar figure
 #
 # Depends on: panel_est (from 02_build_panel.R), save_tex(), SAVE_CSV
 #
@@ -25,10 +25,10 @@
 
 
 # ==============================================================================
-# 5. SECTION II: DECADATA SUMMARY AND PRODUCT COVERAGE
+# 5. DECADATA SUMMARY AND PRODUCT COVERAGE
 # ==============================================================================
 
-message("Building Section II tables ...")
+message("Building summary and product coverage tables ...")
 
 # -- SOE window bounds (used for shading in figures) --
 soe_window <- panel_est %>%
@@ -147,8 +147,6 @@ g_vol_price <- ggplot(wk, aes(x = week_start)) +
   theme_minimal() +
   theme(legend.position = "top", plot.subtitle = element_text(size = 8))
 
-g_vol_price
-
 ggsave("figures/01_fig_volume_and_prices_dual_axis.png", g_vol_price,
        width = 11, height = 5.5, dpi = 300)
 message("Saved: figures/01_fig_volume_and_prices_dual_axis.png")
@@ -183,8 +181,6 @@ g_cost_weekly <- ggplot(cost_weekly, aes(x = week_start, y = value, linetype = s
   ) +
   theme_minimal() +
   theme(legend.position = "top", plot.subtitle = element_text(size = 8))
-
-g_cost_weekly
 
 ggsave("figures/02_fig_cost_weekly.png", g_cost_weekly,
        width = 11, height = 5.5, dpi = 300)
@@ -299,13 +295,13 @@ save_tex(
 
 
 # ==============================================================================
-# 6. SECTION III.A TABLES: PERIOD MEANS
+# 6. PERIOD MEANS
 # ==============================================================================
 
-message("Building Section III.A period means tables ...")
+message("Building period means tables ...")
 
-make_period_means <- function(df, price_col, cost_col, margin_col) {
-  df %>%
+make_period_means_long <- function(df, price_col, cost_col, margin_col) {
+  df_period <- df %>%
     mutate(
       period = case_when(
         preSoE  == 1L ~ "Pre-SOE",
@@ -315,103 +311,103 @@ make_period_means <- function(df, price_col, cost_col, margin_col) {
       ),
       period = factor(period, levels = c("Pre-SOE", "During SOE", "Post-SOE"))
     ) %>%
-    filter(!is.na(period)) %>%
+    filter(!is.na(period))
+  
+  # By period
+  period_long <- df_period %>%
     group_by(product, period) %>%
     summarise(
-      avg_volume = mean(upc_week_volume, na.rm = TRUE),
-      avg_price  = mean(.data[[price_col]][upc_week_volume > 0],  na.rm = TRUE),
-      avg_cost   = mean(.data[[cost_col]][upc_week_volume > 0],   na.rm = TRUE),
-      avg_margin = mean(.data[[margin_col]][upc_week_volume > 0], na.rm = TRUE),
-      .groups    = "drop"
+      Volume = mean(upc_week_volume, na.rm = TRUE),
+      Price  = mean(.data[[price_col]][upc_week_volume > 0],  na.rm = TRUE),
+      Cost   = mean(.data[[cost_col]][upc_week_volume > 0],   na.rm = TRUE),
+      Margin = mean(.data[[margin_col]][upc_week_volume > 0], na.rm = TRUE),
+      .groups = "drop"
     ) %>%
-    pivot_wider(
-      names_from  = period,
-      values_from = c(avg_volume, avg_price, avg_cost, avg_margin),
-      names_glue  = "{period}_{.value}"
+    mutate(period = as.character(period)) %>%
+    pivot_longer(c(Volume, Price, Cost, Margin), names_to = "metric", values_to = "value")
+  
+  # Pooled across all periods: total volume (sum), pooled avg price/cost/margin
+  total_long <- df_period %>%
+    group_by(product) %>%
+    summarise(
+      Volume = sum(upc_week_volume, na.rm = TRUE),
+      Price  = mean(.data[[price_col]][upc_week_volume > 0],  na.rm = TRUE),
+      Cost   = mean(.data[[cost_col]][upc_week_volume > 0],   na.rm = TRUE),
+      Margin = mean(.data[[margin_col]][upc_week_volume > 0], na.rm = TRUE),
+      .groups = "drop"
     ) %>%
-    arrange(product) %>%
-    mutate(product = stringr::str_to_title(as.character(product)))
+    pivot_longer(c(Volume, Price, Cost, Margin), names_to = "metric", values_to = "value") %>%
+    mutate(period = if_else(metric == "Volume", "Total", "All"))
+  
+  bind_rows(period_long, total_long) %>%
+    mutate(
+      product = stringr::str_to_title(as.character(product)),
+      metric  = factor(metric, levels = c("Volume", "Price", "Cost", "Margin")),
+      period  = factor(period, levels = c("Pre-SOE", "During SOE", "Post-SOE", "Total", "All")),
+      value   = if_else(metric == "Volume", round(value, 0), round(value, 2))
+    ) %>%
+    arrange(metric, period, product) %>%
+    pivot_wider(names_from = product, values_from = value) %>%
+    arrange(metric, period)
 }
 
-period_col_order <- c(
-  "product",
-  "Pre-SOE_avg_volume",  "During SOE_avg_volume",  "Post-SOE_avg_volume",
-  "Pre-SOE_avg_price",   "During SOE_avg_price",   "Post-SOE_avg_price",
-  "Pre-SOE_avg_cost",    "During SOE_avg_cost",    "Post-SOE_avg_cost",
-  "Pre-SOE_avg_margin",  "During SOE_avg_margin",  "Post-SOE_avg_margin"
-)
-
-make_period_table_kbl <- function(df_wide, caption_str, label_str,
-                                  price_label  = "Price (\\$)",
-                                  cost_label   = "Cost (\\$)",
-                                  margin_label = "Margin (\\$)") {
-  period_labels <- c("Pre-SOE", "During SOE", "Post-SOE")
-  df_renamed <- df_wide %>%
-    setNames(c(
-      "Product",
-      paste0("Vol. (", period_labels, ")"),
-      paste0("Price (", period_labels, ")"),
-      paste0("Cost (", period_labels, ")"),
-      paste0("Margin (", period_labels, ")")
-    ))
-  kbl(df_renamed,
+make_period_table_kbl <- function(df_wide, caption_str, label_str) {
+  product_cols <- setdiff(names(df_wide), c("metric", "period"))
+  
+  pack_index <- df_wide %>%
+    count(metric, .drop = FALSE) %>%
+    tibble::deframe()
+  
+  tbl <- df_wide %>% select(period, all_of(product_cols))
+  
+  kbl(tbl,
       format = "latex", booktabs = TRUE,
       caption = caption_str, label = label_str,
-      align   = paste0("l", strrep("r", ncol(df_renamed) - 1)),
-      escape  = FALSE) %>%
-    add_header_above(c(
-      " " = 1, "Volume" = 3, price_label = 3, cost_label = 3, margin_label = 3
-    ), escape = FALSE) %>%
+      align   = paste0("l", strrep("r", length(product_cols))),
+      col.names = c(" ", product_cols),
+      format.args = list(big.mark = ",")) %>%
+    pack_rows(index = pack_index) %>%
     kable_styling(latex_options = c("hold_position", "scale_down"))
 }
 
 # Nominal (main)
-means_nom <- make_period_means(panel_est, "p_ist", "w_ist", "margin_nom") %>%
-  select(all_of(intersect(period_col_order, names(.)))) %>%
-  rename(Product = product) %>%
-  mutate(across(where(is.numeric), ~round(.x, 2)))
+means_nom <- make_period_means_long(panel_est, "p_ist", "w_ist", "margin_nom")
 
 if (SAVE_CSV) write.csv(means_nom, "tables_csv/04_tab_period_means_nominal.csv", row.names = FALSE)
 
 save_tex(
   make_period_table_kbl(
     means_nom,
-    caption_str  = "Average weekly volume, nominal retail price, nominal wholesale cost, and nominal dollar margin by product and SOE period. Averages computed across store-product-weeks with positive sales, retailer 4 excluded. Volume units: pounds (bananas, cabbage, cucumbers, tomatoes) and 8~oz bags (lettuce).",
-    label_str    = "tab:period_means_nominal",
-    price_label  = "Price (\\$)", cost_label = "Cost (\\$)", margin_label = "Margin (\\$)"
+    caption_str  = "Average weekly volume, nominal retail price, nominal wholesale cost, and nominal dollar margin by product and SOE period. ``Total'' is summed volume across the full sample; ``All'' rows are pooled averages across all periods. Averages computed across store-product-weeks with positive sales, retailer 4 excluded. Volume units: pounds (bananas, cabbage, cucumbers, tomatoes) and 8~oz bags (lettuce).",
+    label_str    = "tab:period_means_nominal"
   ),
   "04_tab_period_means_nominal.tex"
 )
 
 # Real (supplementary)
-means_real <- make_period_means(panel_est, "p_real", "w_real", "margin_real") %>%
-  select(all_of(intersect(period_col_order, names(.)))) %>%
-  rename(Product = product) %>%
-  mutate(across(where(is.numeric), ~round(.x, 2)))
+means_real <- make_period_means_long(panel_est, "p_real", "w_real", "margin_real")
 
 if (SAVE_CSV) write.csv(means_real, "tables_csv/05_tab_period_means_real.csv", row.names = FALSE)
 
 save_tex(
   make_period_table_kbl(
     means_real,
-    caption_str  = "Average weekly volume, real retail price, real wholesale cost, and real dollar margin by product and SOE period (January 2018 = 1.00 base). Averages computed across store-product-weeks with positive sales, retailer 4 excluded. Volume units: pounds (bananas, cabbage, cucumbers, tomatoes) and 8~oz bags (lettuce).",
-    label_str    = "tab:period_means_real",
-    price_label  = "Price (real \\$)", cost_label = "Cost (real \\$)", margin_label = "Margin (real \\$)"
+    caption_str  = "Average weekly volume, real retail price, real wholesale cost, and real dollar margin by product and SOE period (January 2018 = 1.00 base). ``Total'' is summed volume across the full sample; ``All'' rows are pooled averages across all periods. Averages computed across store-product-weeks with positive sales, retailer 4 excluded. Volume units: pounds (bananas, cabbage, cucumbers, tomatoes) and 8~oz bags (lettuce).",
+    label_str    = "tab:period_means_real"
   ),
   "05_tab_period_means_real.tex"
 )
 
 
 # ==============================================================================
-# 7. SECTION III.B: FLAGGED-WEEKS TABLE
+# 7. FLAGGED-WEEKS TABLE
 # ==============================================================================
 # A store-product-week is flagged if the nominal retail price during the SOE
-# exceeds the average nominal retail price over the 30 days prior to the SOE
-# start date by more than threshold kappa.
+# exceeds the four-week pre-SOE average by more than threshold kappa.
 # Cost justification: dollar price increase does not exceed dollar cost increase.
 # ==============================================================================
 
-message("Building Section III.B flagged-weeks table ...")
+message("Building flagged-weeks table ...")
 
 THRESHOLDS <- c(0.10, 0.15, 0.20, 0.25, 0.30)
 COST_MULT  <- 1.00
@@ -419,7 +415,7 @@ COST_MULT  <- 1.00
 baseline_flag <- panel_est %>%
   filter(!is.na(apg_start_date)) %>%
   mutate(days_to_start = as.integer(apg_start_date - week_start)) %>%
-  filter(days_to_start > 0, days_to_start <= 30) %>%
+  filter(days_to_start > 0, days_to_start <= 28) %>%
   group_by(store_id, product) %>%
   summarise(
     p_base = mean(p_ist, na.rm = TRUE),
@@ -591,10 +587,8 @@ g_flag_cluster <- ggplot(plot_long,
   theme(legend.position = "top", axis.text.x = element_text(angle = 35, hjust = 1),
         plot.subtitle = element_text(size = 8))
 
-g_flag_cluster
-
 ggsave("figures/03_fig_flag_cluster_stacked.png", g_flag_cluster,
        width = 12, height = 6, dpi = 300)
 message("Saved: figures/03_fig_flag_cluster_stacked.png")
 
-message("Section II-III descriptive tables complete.")
+message("Descriptive tables complete.")
