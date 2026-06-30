@@ -1,0 +1,30 @@
+\begin{table}[!h]
+\centering
+\caption{\label{tab:tab:summary_stats}Summary statistics: store--product--week panel}
+\centering
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{
+\begin{tabular}[t]{llrrrrrrr}
+\toprule
+Variable & Description & Mean & Std.\ Dev. & 25th pctl & Median & 75th pctl & Min & Max\\
+\midrule
+$p_{ist}$ & Retail price $p_{ist}$ (\$/unit or lb) & 1.154 & 0.668 & 0.674 & 0.791 & 1.673 & 0.174 & 4.563\\
+$w_{ist}$ & Wholesale cost $w_{ist}$ (\$/unit or lb) & 0.535 & 0.262 & 0.330 & 0.391 & 0.730 & 0.110 & 1.720\\
+$m_{ist}$ & Margin $m_{ist} = p_{ist} - w_{ist}$ & 0.620 & 0.479 & 0.319 & 0.430 & 0.840 & -0.360 & 3.263\\
+$\Delta p$ & Weekly change in retail price $\Delta p_{ist}$ & 0.001 & 0.162 & -0.005 & 0.000 & 0.018 & -1.328 & 1.232\\
+$\Delta w$ & Weekly change in wholesale cost $\Delta w_{ist}$ & 0.000 & 0.053 & -0.007 & 0.000 & 0.007 & -0.541 & 0.482\\
+\addlinespace
+\addlinespace
+$SoE$ & State of emergency indicator $SoE_{st}$ & 0.233 & 0.423 & 0.000 & 0.000 & 0.000 & 0.000 & 1.000\\
+\addlinespace
+$k$ & Event time $k$ relative to end of $SoE_{st}$ & -40.026 & 84.279 & -114.000 & -41.000 & 33.000 & -202.000 & 123.000\\
+$Dur_s$ & APG enforcement duration $Dur_s$ (weeks)\textsuperscript{a} & 36.389 & 21.763 & 18.000 & 35.500 & 53.000 & 1.000 & 89.000\\
+\bottomrule
+\multicolumn{9}{l}{\rule{0pt}{1em}\textit{\textit{Notes:}}}\\
+\multicolumn{9}{l}{\rule{0pt}{1em}Statistics computed at the store--product--week level over 2019--2022.}\\
+\multicolumn{9}{l}{\rule{0pt}{1em}Prices and costs are in dollars per unit or per pound.}\\
+\multicolumn{9}{l}{\rule{0pt}{1em}$\Delta p_{ist}$ and $\Delta w_{ist}$ are weekly first differences.}\\
+\multicolumn{9}{l}{\rule{0pt}{1em}$SoE_{st}$ equals one when a COVID-19 state of emergency is active in state $s$.}\\
+\multicolumn{9}{l}{\rule{0pt}{1em}$k$ is event time in weeks relative to the end of the state of emergency.}\\
+\multicolumn{9}{l}{\rule{0pt}{1em}\textsuperscript{a}$Dur_s$ is the total duration of the state of emergency in each state; statistics are computed across the five states in the sample.}\\
+\end{tabular}}
+\end{table}

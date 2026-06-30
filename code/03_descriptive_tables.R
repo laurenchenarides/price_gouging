@@ -16,6 +16,7 @@
 #   05_tab_period_means_real.tex
 #   06_tab_flagged_weeks_all.tex
 #   07_tab_flagged_weeks_T25.tex
+#   00_tab_summary_stats.tex
 #
 # Outputs (figures/):
 #   01_fig_volume_and_prices_dual_axis.png
@@ -590,5 +591,92 @@ g_flag_cluster <- ggplot(plot_long,
 ggsave("figures/03_fig_flag_cluster_stacked.png", g_flag_cluster,
        width = 12, height = 6, dpi = 300)
 message("Saved: figures/03_fig_flag_cluster_stacked.png")
+
+# ==============================================================================
+# SUMMARY STATISTICS TABLE
+# ==============================================================================
+
+sum_stat <- function(x) {
+  x <- x[is.finite(x)]
+  q <- quantile(x, c(0.25, 0.5, 0.75))
+  c(Mean = mean(x), SD = sd(x),
+    P25 = q[[1]], Median = q[[2]], P75 = q[[3]],
+    Min = min(x), Max = max(x))
+}
+
+dur_by_state <- panel_est %>%
+  distinct(sst, Dur_st) %>%
+  filter(Dur_st > 0)          # keep only states that had an SOE
+
+vars <- list(
+  list(sym = "$p_{ist}$",       desc = "Retail price $p_{ist}$ (\\$/unit or lb)",              col = "p_ist"),
+  list(sym = "$w_{ist}$",       desc = "Wholesale cost $w_{ist}$ (\\$/unit or lb)",             col = "w_ist"),
+  list(sym = "$m_{ist}$",       desc = "Margin $m_{ist} = p_{ist} - w_{ist}$",                 col = "margin_nom"),
+  list(sym = "$\\Delta p$",     desc = "Weekly change in retail price $\\Delta p_{ist}$",      col = "dP"),
+  list(sym = "$\\Delta w$",     desc = "Weekly change in wholesale cost $\\Delta w_{ist}$",    col = "dW"),
+  list(sym = "$SoE$",           desc = "State of emergency indicator $SoE_{st}$",              col = "SoE"),
+  list(sym = "$k$",             desc = "Event time $k$ relative to end of $SoE_{st}$",        col = "k_end"),
+  list(sym = "$Dur_s$",
+       desc = "APG enforcement duration $Dur_s$ (weeks)\\textsuperscript{a}",
+       col  = NULL,
+       vals = dur_by_state$Dur_st)
+)
+
+sumstat_rows <- purrr::map_dfr(vars, function(v) {
+  x <- if (!is.null(v$vals)) v$vals else panel_est[[v$col]]
+  s <- sum_stat(x)
+  tibble::tibble(
+    Variable    = v$sym,
+    Description = v$desc,
+    Mean        = round(s["Mean"],   3),
+    `Std. Dev.` = round(s["SD"],     3),
+    `25th`      = round(s["P25"],    3),
+    Median      = round(s["Median"], 3),
+    `75th`      = round(s["P75"],    3),
+    Min         = round(s["Min"],    3),
+    Max         = round(s["Max"],    3)
+  )
+})
+
+sumstat_notes <- paste0(
+  "\\vspace{0.5em}\n",
+  "\\begin{minipage}{\\linewidth}\n",
+  "\\footnotesize\n",
+  "\\textit{Notes:} Statistics computed at the store--product--week level over 2019--2022. ",
+  "Prices and costs are in dollars per unit or per pound depending on whether the item is sold by count or weight. ",
+  "$\\Delta p_{ist}$ and $\\Delta w_{ist}$ are weekly first differences of the corresponding levels. ",
+  "$SoE_{st}$ equals one in weeks when a COVID-19 state of emergency (and associated APG protections) is active in state $s$, zero otherwise. ",
+  "$k$ is event time in weeks relative to the end of the state of emergency. ",
+  "\\textsuperscript{a}\\,$Dur_s$ is the total duration of the state of emergency in each state; statistics are computed across the five states in the sample.",
+  "\n\\end{minipage}"
+)
+
+save_tex(
+  kbl(sumstat_rows,
+      format    = "latex", booktabs = TRUE, escape = FALSE,
+      caption   = "Summary statistics: store--product--week panel",
+      label     = "tab:summary_stats",
+      align     = paste0("ll", strrep("r", 7)),
+      col.names = c("Variable", "Description", "Mean", "Std.\\ Dev.",
+                    "25th pctl", "Median", "75th pctl", "Min", "Max")) %>%
+    row_spec(5, extra_latex_after = "\\addlinespace") %>%
+    row_spec(6, extra_latex_after = "\\addlinespace") %>%
+    kable_styling(latex_options = c("hold_position", "scale_down")) %>%
+    footnote(
+      general = c(
+        "Statistics computed at the store--product--week level over 2019--2022.",
+        "Prices and costs are in dollars per unit or per pound.",
+        "$\\\\Delta p_{ist}$ and $\\\\Delta w_{ist}$ are weekly first differences.",
+        "$SoE_{st}$ equals one when a COVID-19 state of emergency is active in state $s$.",
+        "$k$ is event time in weeks relative to the end of the state of emergency.",
+        "\\\\textsuperscript{a}$Dur_s$ is the total duration of the state of emergency in each state; statistics are computed across the five states in the sample."
+      ),
+      general_title = "\\\\textit{Notes:}",
+      escape = FALSE
+    ),
+  "00_tab_summary_stats.tex"
+)
+
+message("Saved: tables_latex/00_tab_summary_stats.tex")
 
 message("Descriptive tables complete.")

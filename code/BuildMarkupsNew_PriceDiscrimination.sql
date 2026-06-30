@@ -27,7 +27,7 @@
  *   stg.pd_store_upc_day   -- store x UPC x date level (price dispersion)
  *   stg.pd_store_upc_week  -- collapsed to week for joining to panel_est in R
  *
- * Last Updated: 2026
+ * Last Updated: June 29, 2026
  * By: Lauren Chenarides
  * ---------------------------------------------------------------------------- */
 
@@ -290,4 +290,4 @@ CREATE INDEX IX_pd_week_store_upc ON stg.pd_store_upc_week(store_id, upc, week_s
 SELECT upc, COUNT(*) AS n_rows FROM stg.pd_store_upc_week GROUP BY upc ORDER BY upc;
 
 -- Preview
-SELECT TOP 20 * FROM stg.pd_store_upc_week ORDER BY store_id, upc, week_seq;
+SELECT TOP 100 * FROM stg.pd_store_upc_week ORDER BY store_id, upc, week_seq;

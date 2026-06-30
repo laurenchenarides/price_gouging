@@ -9,7 +9,7 @@
       \midrule
       \emph{Variables}\\
       $SOE_{st}$     & -0.179$^{***}$ & -0.180$^{***}$\\   
-                     & (0.002)        & (0.002)\\   
+                     & (0.005)        & (0.005)\\   
       $postSOE_{st}$ &                & -0.003\\   
                      &                & (0.002)\\   
       \midrule
@@ -21,7 +21,7 @@
       Observations   & 604,121        & 604,121\\  
       R$^2$          & 0.65857        & 0.65858\\  
       \midrule \midrule
-      \multicolumn{3}{l}{\emph{Clustered (store\_id) standard-errors in parentheses}}\\
+      \multicolumn{3}{l}{\emph{Clustered (sst) standard-errors in parentheses}}\\
       \multicolumn{3}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
    \end{tabular}
    
@@ -29,7 +29,8 @@
    Dependent variable: nominal dollar margin $M_{ist} = p_{ist} - w_{ist}$.\\
    Column (1): SOE only. Column (2): SOE and post-SOE.\\
    Fixed effects: product and store.\\
-   Standard errors clustered at the store level.
+   Standard errors clustered at the state level ($G = 5$).\\
+   See Table~\ref{tab:margin\_wcb} for wild cluster bootstrap inference.
 \end{table}
 
 

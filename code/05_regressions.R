@@ -6,6 +6,7 @@
 #   9b. Wild cluster bootstrap robustness (price)
 #   10. Margin level regressions (baseline and state heterogeneity)
 #   10b. Wild cluster bootstrap robustness (margin)
+#   10c. + 10d. Cost regressions (Accounting check)
 #
 # Specification:
 #   P_ist = alpha + beta1*SOE_st + beta2*postSOE_st + gamma_j + delta_i
@@ -25,6 +26,8 @@
 #   10_tab_margin_reg.tex
 #   11_tab_margin_reg_state_heterog.tex
 #   10b_tab_margin_wcb.tex
+#   10c_tab_cost_reg.tex
+#   10d_tab_cost_reg_state_heterog.tex
 #
 # Outputs (figures/):
 #   08_fig_price_coef_baseline.png
@@ -52,15 +55,16 @@ reg_data <- panel_est %>%
 # clustid must be a column name present in the model's data.
 # ==============================================================================
 
-run_wcb <- function(model, param, B = 9999, seed = 42) {
+run_wcb <- function(model, param, B = 999, seed = 42) {
+  set.seed(seed)
+  dqrng::dqset.seed(seed)
   bt <- boottest(
     model,
     param    = param,
     B        = B,
     clustid  = "sst",
     type     = "webb",
-    conf_int = TRUE,
-    seed     = seed
+    conf_int = TRUE
   )
   tibble::tibble(
     term     = param,
@@ -77,7 +81,7 @@ format_wcb_table <- function(wcb_df, term_labels) {
       term     = dplyr::recode(term, !!!term_labels),
       estimate = formatC(estimate, digits = 3, format = "f"),
       ci       = paste0("[", formatC(ci_low,  digits = 3, format = "f"), ", ",
-                             formatC(ci_high, digits = 3, format = "f"), "]"),
+                        formatC(ci_high, digits = 3, format = "f"), "]"),
       p_boot   = formatC(p_boot, digits = 3, format = "f")
     ) %>%
     select(Term = term, Estimate = estimate,
@@ -112,7 +116,7 @@ etable(
   notes   = c(
     "Dependent variable: nominal retail price $p_{ist}$ (dollars per unit or pound).",
     "Fixed effects: product ($\\gamma_j$) and store ($\\delta_i$).",
-    "Standard errors clustered at the state level ($G = 5$).",
+    "Standard errors clustered at the state level.",
     "See Table~\\ref{tab:price_wcb} for wild cluster bootstrap inference."
   )
 )
@@ -139,7 +143,7 @@ etable(
     "Dependent variable: nominal retail price $p_{ist}$.",
     "Each coefficient is a state-specific SOE or post-SOE effect.",
     "Fixed effects: product and store.",
-    "Standard errors clustered at the state level ($G = 5$)."
+    "Standard errors clustered at the state level."
   )
 )
 message("Saved: tables_latex/09_tab_price_reg_state_heterog.tex")
@@ -237,16 +241,18 @@ message("Saved: figures/08_fig_price_coef_baseline.png")
 
 g_price_state <- ggplot(
   price_coef_df %>% filter(model == "State heterogeneity"),
-  aes(x = state, y = estimate, ymin = conf.low, ymax = conf.high, color = period)
+  aes(x = state, y = estimate, ymin = conf.low, ymax = conf.high,
+      color = period, shape = period)
 ) +
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_pointrange(position = position_dodge(width = 0.5)) +
   geom_text(aes(label = round(estimate, 3)),
             position = position_dodge(width = 0.5), vjust = -1.0, size = 3.2,
             show.legend = FALSE) +
+  scale_shape_manual(values = c("During SOE" = 16, "Post-SOE" = 17)) +
   labs(x = "State", y = "Coefficient (nominal price, $)",
        title = "State-specific SOE and post-SOE effects on nominal retail price",
-       color = NULL) +
+       color = NULL, shape = NULL) +
   theme_bw()
 
 g_price_state
@@ -266,11 +272,14 @@ message("Saved: figures/09_fig_price_coef_state_heterog.png")
 # ==============================================================================
 
 message("Running wild cluster bootstrap for price regressions (B = 9999) ...")
+t0_price <- proc.time()
 
 price_wcb <- bind_rows(
   run_wcb(m_price_prepost, "SoE"),
   run_wcb(m_price_prepost, "postSoE")
 )
+
+message(sprintf("Price bootstrap done in %.1f seconds.", (proc.time() - t0_price)["elapsed"]))
 
 price_wcb_tbl <- format_wcb_table(
   price_wcb,
@@ -325,7 +334,7 @@ etable(
     "Dependent variable: nominal dollar margin $M_{ist} = p_{ist} - w_{ist}$.",
     "Column (1): SOE only. Column (2): SOE and post-SOE.",
     "Fixed effects: product and store.",
-    "Standard errors clustered at the state level ($G = 5$).",
+    "Standard errors clustered at the state level.",
     "See Table~\\ref{tab:margin_wcb} for wild cluster bootstrap inference."
   )
 )
@@ -352,7 +361,7 @@ etable(
     "Dependent variable: nominal dollar margin $M_{ist}$.",
     "Each coefficient is a state-specific SOE or post-SOE margin effect.",
     "Fixed effects: product and store.",
-    "Standard errors clustered at the state level ($G = 5$)."
+    "Standard errors clustered at the state level."
   )
 )
 message("Saved: tables_latex/11_tab_margin_reg_state_heterog.tex")
@@ -392,6 +401,8 @@ g_margin_coef <- ggplot(margin_coef_df,
        title = "SOE and post-SOE effects on nominal dollar margin") +
   theme_bw()
 
+g_margin_coef
+
 ggsave("figures/10_fig_margin_coef_prepost.png", g_margin_coef,
        width = 7, height = 5, dpi = 300)
 message("Saved: figures/10_fig_margin_coef_prepost.png")
@@ -417,6 +428,8 @@ g_margin_state_coef <- ggplot(margin_state_coef_df,
        color = NULL, shape = NULL) +
   theme_bw()
 
+g_margin_state_coef
+
 ggsave("figures/11_fig_margin_coef_state_heterog.png", g_margin_state_coef,
        width = 9, height = 5, dpi = 300)
 message("Saved: figures/11_fig_margin_coef_state_heterog.png")
@@ -427,11 +440,14 @@ message("Saved: figures/11_fig_margin_coef_state_heterog.png")
 # ==============================================================================
 
 message("Running wild cluster bootstrap for margin regressions (B = 9999) ...")
+t0_margin <- proc.time()
 
 margin_wcb <- bind_rows(
   run_wcb(m_margin_prepost, "SoE"),
   run_wcb(m_margin_prepost, "postSoE")
 )
+
+message(sprintf("Margin bootstrap done in %.1f seconds.", (proc.time() - t0_margin)["elapsed"]))
 
 margin_wcb_tbl <- format_wcb_table(
   margin_wcb,
@@ -450,5 +466,81 @@ save_tex(
   "10b_tab_margin_wcb.tex"
 )
 message("Saved: tables_latex/10b_tab_margin_wcb.tex")
+
+# ==============================================================================
+# Accounting Check: COST REGRESSIONS
+# ==============================================================================
+
+m_cost_soe <- feols(
+  w_ist ~ SoE | product + store_id,
+  data = reg_data, cluster = ~ sst
+)
+
+m_cost_prepost <- feols(
+  w_ist ~ SoE + postSoE | product + store_id,
+  data = reg_data, cluster = ~ sst
+)
+
+etable(list("(1)" = m_cost_soe, "(2)" = m_cost_prepost))
+
+etable(
+  list("(1)" = m_cost_soe, "(2)" = m_cost_prepost),
+  tex     = TRUE,
+  file    = "tables_latex/10c_tab_cost_reg.tex",
+  title   = "Cost regressions: SOE and post-SOE on nominal wholesale cost",
+  label   = "tab:cost_reg",
+  digits  = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2,
+  dict    = c("SoE" = "$SOE_{st}$", "postSoE" = "$postSOE_{st}$"),
+  notes   = c(
+    "Dependent variable: nominal wholesale cost $w_{ist}$ (dollars per unit or pound).",
+    "Fixed effects: product ($\\gamma_j$) and store ($\\delta_i$).",
+    "Standard errors clustered at the state level."
+  )
+)
+message("Saved: tables_latex/10c_tab_cost_reg.tex")
+
+m_cost_state_het <- feols(
+  w_ist ~ 0 + i(sst, SoE) + i(sst, postSoE) | product + store_id,
+  data = reg_data, cluster = ~ sst
+)
+
+etable(
+  list("(1)" = m_cost_state_het),
+  tex     = TRUE,
+  file    = "tables_latex/10d_tab_cost_reg_state_heterog.tex",
+  title   = "State heterogeneity in SOE and post-SOE cost effects (nominal wholesale cost)",
+  label   = "tab:cost_reg_state_heterog",
+  digits  = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2,
+  notes   = c(
+    "Dependent variable: nominal wholesale cost $w_{ist}$.",
+    "Each coefficient is a state-specific SOE or post-SOE effect.",
+    "Fixed effects: product and store.",
+    "Standard errors clustered at the state level ($G = 5$)."
+  )
+)
+message("Saved: tables_latex/10d_tab_cost_reg_state_heterog.tex")
+
+cost_state_interleaved <- build_state_interleaved(m_cost_state_het)
+
+save_tex(
+  kbl(cost_state_interleaved,
+      format = "latex", booktabs = TRUE,
+      caption = "State heterogeneity in SOE and post-SOE cost effects (nominal wholesale cost)",
+      label   = "tab:cost_reg_state_heterog",
+      align   = "lrr", escape = FALSE) %>%
+    add_header_above(c(" " = 1, "Nominal wholesale cost $w_{ist}$" = 2), escape = FALSE) %>%
+    kable_styling(latex_options = c("hold_position")) %>%
+    footnote(
+      general = c(
+        "Dependent variable: nominal wholesale cost $w_{ist}$.",
+        "Fixed effects: product and store.",
+        "Standard errors clustered at the state level ($G = 5$) in parentheses.",
+        "Signif. codes: ***: 0.01, **: 0.05, *: 0.1"
+      ),
+      general_title = "", escape = FALSE
+    ),
+  "10d_tab_cost_reg_state_heterog.tex"
+)
+message("Saved: tables_latex/10d_tab_cost_reg_state_heterog.tex")
 
 message("Price and margin regressions complete.")

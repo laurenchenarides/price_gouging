@@ -1,0 +1,33 @@
+
+\begin{table}[htbp]
+   \caption{\label{tab:cost_reg} Cost regressions: SOE and post-SOE on nominal wholesale cost}
+   \centering
+   \begin{tabular}{lcc}
+      \tabularnewline \midrule \midrule
+      Model:         & (1)            & (2)\\  
+      \midrule
+      \emph{Variables}\\
+      $SOE_{st}$     & -0.032$^{***}$ & -0.013$^{***}$\\   
+                     & (0.002)        & (0.001)\\   
+      $postSOE_{st}$ &                & 0.039$^{***}$\\   
+                     &                & (0.0005)\\   
+      \midrule
+      \emph{Fixed-effects}\\
+      product        & Yes            & Yes\\  
+      store\_id      & Yes            & Yes\\  
+      \midrule
+      \emph{Fit statistics}\\
+      Observations   & 604,121        & 604,121\\  
+      R$^2$          & 0.81375        & 0.81779\\  
+      \midrule \midrule
+      \multicolumn{3}{l}{\emph{Clustered (sst) standard-errors in parentheses}}\\
+      \multicolumn{3}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+   \end{tabular}
+   
+   \par \raggedright 
+   Dependent variable: nominal wholesale cost $w_{ist}$ (dollars per unit or pound).\\
+   Fixed effects: product ($\gamma_j$) and store ($\delta_i$).\\
+   Standard errors clustered at the state level.
+\end{table}
+
+
