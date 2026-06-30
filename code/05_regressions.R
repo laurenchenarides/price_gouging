@@ -261,6 +261,10 @@ ggsave("figures/09_fig_price_coef_state_heterog.png", g_price_state,
        width = 9, height = 5, dpi = 300)
 message("Saved: figures/09_fig_price_coef_state_heterog.png")
 
+broom::tidy(m_price_state_het, conf.int = TRUE) %>%
+  filter(grepl(":SoE$|:postSoE$", term)) %>%
+  select(term, estimate, conf.low, conf.high) %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3)))
 
 # ==============================================================================
 # 9b. ROBUSTNESS: WILD CLUSTER BOOTSTRAP — PRICE
@@ -434,6 +438,10 @@ ggsave("figures/11_fig_margin_coef_state_heterog.png", g_margin_state_coef,
        width = 9, height = 5, dpi = 300)
 message("Saved: figures/11_fig_margin_coef_state_heterog.png")
 
+broom::tidy(m_margin_state_het, conf.int = TRUE) %>%
+  filter(grepl(":SoE$|:postSoE$", term)) %>%
+  select(term, estimate, conf.low, conf.high) %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3)))
 
 # ==============================================================================
 # 10b. ROBUSTNESS: WILD CLUSTER BOOTSTRAP — MARGIN
