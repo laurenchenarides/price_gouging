@@ -118,7 +118,7 @@ The duration extension asks how many weeks it takes for pass-through to return t
 
 ![Pass-through by enforcement duration](figures/13_fig_passthrough_duration.png)
 
-### Mechanism 3: Countercyclical Promotional Pricing (Section V)
+### Mechanism 3: Countercyclical Promotional Pricing
 
 Retailers use promotional discounts to price discriminate between price-elastic shoppers (deal hunters) and price-inelastic shoppers (who pay the shelf price). If APG laws constrain posted prices, retailers may adjust deal frequency or depth as an alternative margin-management channel.
 
@@ -227,12 +227,12 @@ price_gouging/
 │   ├── 00_read_in_data.R                      # SQL pull
 │   ├── 01_price_sensitivity_diagnostic.R      # Price measure diagnostics
 │   ├── 02_build_panel.R                       # Panel construction
-│   ├── 03_descriptive_tables.R                # Sections II–III
-│   ├── 04_residual_plots.R                    # Section III.C–E
-│   ├── 05_regressions.R                       # Sections IV.A–B
-│   ├── 06_passthrough.R                       # Section IV.C
-│   ├── 07_uniform_pricing.R                   # Section IV.D
-│   ├── 08_demand_rotation.R                   # Section V (Mechanism 3)
+│   ├── 03_descriptive_tables.R                # Section 4.1
+│   ├── 04_residual_plots.R                    # TBD
+│   ├── 05_regressions.R                       # Sections 4.2 and 4.3 
+│   ├── 06_passthrough.R                       # Section 5.2
+│   ├── 07_uniform_pricing.R                   # Section 5.1
+│   ├── 08_demand_rotation.R                   # Section 5.3
 │   ├── BuildMarkupsNew_2026_04.sql            # Builds stg.store_upc_week and pos_* tables
 │   ├── BuildMarkupsNew_Consumer_Tables.sql    # Consumer-level transaction diagnostics
 │   └── BuildMarkupsNew_PriceDiscrimination.sql # Builds stg.pd_store_upc_week for Mechanism 3
