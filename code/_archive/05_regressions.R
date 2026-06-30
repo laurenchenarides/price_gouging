@@ -1,30 +1,17 @@
 # ==============================================================================
 # 05_regressions.R
 #
-# Empirical Model; Results: Retail Prices; Results: Markups
+# Purpose: Price and margin level regressions.
 #   9.  Price level regressions (baseline and state heterogeneity)
-#   9b. Wild cluster bootstrap robustness (price)
 #   10. Margin level regressions (baseline and state heterogeneity)
-#   10b. Wild cluster bootstrap robustness (margin)
-#
-# Specification:
-#   P_ist = alpha + beta1*SOE_st + beta2*postSOE_st + gamma_j + delta_i
-#
-# Fixed effects: product and store. No week FEs (collinear with SOE indicator).
-# Standard errors: clustered at the state level (enforcement varies at
-#   state-week level; allows arbitrary within-state serial correlation).
-# Robustness: wild cluster bootstrap with Webb (2023) weights (preferred
-#   for small G; here G = 5 states).
 #
 # Depends on: panel_est, save_tex() (from 02_build_panel.R)
 #
 # Outputs (tables_latex/):
 #   08_tab_price_reg.tex
 #   09_tab_price_reg_state_heterog.tex
-#   08b_tab_price_wcb.tex
 #   10_tab_margin_reg.tex
 #   11_tab_margin_reg_state_heterog.tex
-#   10b_tab_margin_wcb.tex
 #
 # Outputs (figures/):
 #   08_fig_price_coef_baseline.png
@@ -33,70 +20,30 @@
 #   11_fig_margin_coef_state_heterog.png
 # ==============================================================================
 
-# remotes::install_github("s3alfisc/summclust")
-# remotes::install_github("s3alfisc/fwildclusterboot")
-
-library(fwildclusterboot)
-
-message("Estimating price and margin level regressions ...")
+message("Estimating price level regressions ...")
 
 reg_data <- panel_est %>%
   filter(is.finite(p_ist), is.finite(margin_nom))
 
 
 # ==============================================================================
-# HELPER: wild cluster bootstrap for a single parameter
-# ==============================================================================
-# Uses Webb (2023) weights, recommended for G < 10.
-# Returns a one-row tibble with the OLS estimate and bootstrap CI / p-value.
-# clustid must be a column name present in the model's data.
-# ==============================================================================
-
-run_wcb <- function(model, param, B = 9999, seed = 42) {
-  bt <- boottest(
-    model,
-    param    = param,
-    B        = B,
-    clustid  = "sst",
-    type     = "webb",
-    conf_int = TRUE,
-    seed     = seed
-  )
-  tibble::tibble(
-    term     = param,
-    estimate = coef(model)[param],
-    ci_low   = bt$conf_int[1],
-    ci_high  = bt$conf_int[2],
-    p_boot   = bt$p_val
-  )
-}
-
-format_wcb_table <- function(wcb_df, term_labels) {
-  wcb_df %>%
-    mutate(
-      term     = dplyr::recode(term, !!!term_labels),
-      estimate = formatC(estimate, digits = 3, format = "f"),
-      ci       = paste0("[", formatC(ci_low,  digits = 3, format = "f"), ", ",
-                             formatC(ci_high, digits = 3, format = "f"), "]"),
-      p_boot   = formatC(p_boot, digits = 3, format = "f")
-    ) %>%
-    select(Term = term, Estimate = estimate,
-           `95\\% Bootstrap CI` = ci, `Bootstrap $p$` = p_boot)
-}
-
-
-# ==============================================================================
 # 9. PRICE LEVEL REGRESSIONS
+# ==============================================================================
+# Specification:
+#   P_ist = alpha + beta1*SOE_st + beta2*postSOE_st + gamma_i + delta_s
+#
+# FE: product and store. No week FEs (collinear with SOE indicator).
+# Clustering: store level.
 # ==============================================================================
 
 m_price_soe <- feols(
   p_ist ~ SoE | product + store_id,
-  data = reg_data, cluster = ~ sst
+  data = reg_data, cluster = ~ store_id
 )
 
 m_price_prepost <- feols(
   p_ist ~ SoE + postSoE | product + store_id,
-  data = reg_data, cluster = ~ sst
+  data = reg_data, cluster = ~ store_id
 )
 
 etable(list("(1)" = m_price_soe, "(2)" = m_price_prepost))
@@ -112,20 +59,14 @@ etable(
   notes   = c(
     "Dependent variable: nominal retail price $p_{ist}$ (dollars per unit or pound).",
     "Fixed effects: product ($\\gamma_j$) and store ($\\delta_i$).",
-    "Standard errors clustered at the state level ($G = 5$).",
-    "See Table~\\ref{tab:price_wcb} for wild cluster bootstrap inference."
+    "Standard errors clustered at the store level."
   )
 )
 message("Saved: tables_latex/08_tab_price_reg.tex")
 
-
-# ------------------------------------------------------------------------------
-# 9a. State heterogeneity in price effects
-# ------------------------------------------------------------------------------
-
 m_price_state_het <- feols(
   p_ist ~ 0 + i(sst, SoE) + i(sst, postSoE) | product + store_id,
-  data = reg_data, cluster = ~ sst
+  data = reg_data, cluster = ~ store_id
 )
 
 etable(
@@ -139,7 +80,7 @@ etable(
     "Dependent variable: nominal retail price $p_{ist}$.",
     "Each coefficient is a state-specific SOE or post-SOE effect.",
     "Fixed effects: product and store.",
-    "Standard errors clustered at the state level ($G = 5$)."
+    "Standard errors clustered at the store level."
   )
 )
 message("Saved: tables_latex/09_tab_price_reg_state_heterog.tex")
@@ -194,7 +135,7 @@ save_tex(
       general = c(
         "Dependent variable: nominal retail price $p_{ist}$.",
         "Fixed effects: product and store.",
-        "Standard errors clustered at the state level ($G = 5$) in parentheses.",
+        "Standard errors clustered at the store level in parentheses.",
         "Signif. codes: ***: 0.01, **: 0.05, *: 0.1"
       ),
       general_title = "", escape = FALSE
@@ -229,8 +170,6 @@ g_price_coef <- ggplot(
        title = "SOE and post-SOE effects on nominal retail price") +
   theme_bw()
 
-g_price_coef
-
 ggsave("figures/08_fig_price_coef_baseline.png", g_price_coef,
        width = 7, height = 5, dpi = 300)
 message("Saved: figures/08_fig_price_coef_baseline.png")
@@ -249,46 +188,9 @@ g_price_state <- ggplot(
        color = NULL) +
   theme_bw()
 
-g_price_state
-
 ggsave("figures/09_fig_price_coef_state_heterog.png", g_price_state,
        width = 9, height = 5, dpi = 300)
 message("Saved: figures/09_fig_price_coef_state_heterog.png")
-
-
-# ==============================================================================
-# 9b. ROBUSTNESS: WILD CLUSTER BOOTSTRAP — PRICE
-# ==============================================================================
-# Complements state-clustered SEs. Webb (2023) weights preferred for G < 10.
-# Applied to the baseline pooled model (m_price_prepost). The state-
-# heterogeneity model uses the same state-level clustering; per-state
-# bootstrap CIs are available on request but are not reported here.
-# ==============================================================================
-
-message("Running wild cluster bootstrap for price regressions (B = 9999) ...")
-
-price_wcb <- bind_rows(
-  run_wcb(m_price_prepost, "SoE"),
-  run_wcb(m_price_prepost, "postSoE")
-)
-
-price_wcb_tbl <- format_wcb_table(
-  price_wcb,
-  term_labels = c("SoE" = "$SOE_{st}$", "postSoE" = "$postSOE_{st}$")
-)
-
-if (SAVE_CSV) write.csv(price_wcb, "tables_csv/08b_tab_price_wcb.csv", row.names = FALSE)
-
-save_tex(
-  kbl(price_wcb_tbl,
-      format  = "latex", booktabs = TRUE, escape = FALSE,
-      caption = "Wild cluster bootstrap inference for SOE and post-SOE price effects. OLS estimates from the baseline model (Table~\\ref{tab:price_reg}); confidence intervals and $p$-values from wild cluster bootstrap with Webb (2023) weights ($B = 9{,}999$ replications, $G = 5$ state clusters).",
-      label   = "tab:price_wcb",
-      align   = "lrrr") %>%
-    kable_styling(latex_options = c("hold_position")),
-  "08b_tab_price_wcb.tex"
-)
-message("Saved: tables_latex/08b_tab_price_wcb.tex")
 
 
 # ==============================================================================
@@ -302,12 +204,12 @@ message("Estimating margin level regressions ...")
 
 m_margin_soe <- feols(
   margin_nom ~ SoE | product + store_id,
-  data = reg_data, cluster = ~ sst
+  data = reg_data, cluster = ~ store_id
 )
 
 m_margin_prepost <- feols(
   margin_nom ~ SoE + postSoE | product + store_id,
-  data = reg_data, cluster = ~ sst
+  data = reg_data, cluster = ~ store_id
 )
 
 etable(list("(1)" = m_margin_soe, "(2)" = m_margin_prepost))
@@ -325,20 +227,14 @@ etable(
     "Dependent variable: nominal dollar margin $M_{ist} = p_{ist} - w_{ist}$.",
     "Column (1): SOE only. Column (2): SOE and post-SOE.",
     "Fixed effects: product and store.",
-    "Standard errors clustered at the state level ($G = 5$).",
-    "See Table~\\ref{tab:margin_wcb} for wild cluster bootstrap inference."
+    "Standard errors clustered at the store level."
   )
 )
 message("Saved: tables_latex/10_tab_margin_reg.tex")
 
-
-# ------------------------------------------------------------------------------
-# 10a. State heterogeneity in margin effects
-# ------------------------------------------------------------------------------
-
 m_margin_state_het <- feols(
   margin_nom ~ 0 + i(sst, SoE) + i(sst, postSoE) | product + store_id,
-  data = reg_data, cluster = ~ sst
+  data = reg_data, cluster = ~ store_id
 )
 
 etable(
@@ -352,7 +248,7 @@ etable(
     "Dependent variable: nominal dollar margin $M_{ist}$.",
     "Each coefficient is a state-specific SOE or post-SOE margin effect.",
     "Fixed effects: product and store.",
-    "Standard errors clustered at the state level ($G = 5$)."
+    "Standard errors clustered at the store level."
   )
 )
 message("Saved: tables_latex/11_tab_margin_reg_state_heterog.tex")
@@ -371,7 +267,7 @@ save_tex(
       general = c(
         "Dependent variable: nominal dollar margin $M_{ist} = p_{ist} - w_{ist}$.",
         "Fixed effects: product and store.",
-        "Standard errors clustered at the state level ($G = 5$) in parentheses.",
+        "Standard errors clustered at the store level in parentheses.",
         "Signif. codes: ***: 0.01, **: 0.05, *: 0.1"
       ),
       general_title = "", escape = FALSE
@@ -420,35 +316,5 @@ g_margin_state_coef <- ggplot(margin_state_coef_df,
 ggsave("figures/11_fig_margin_coef_state_heterog.png", g_margin_state_coef,
        width = 9, height = 5, dpi = 300)
 message("Saved: figures/11_fig_margin_coef_state_heterog.png")
-
-
-# ==============================================================================
-# 10b. ROBUSTNESS: WILD CLUSTER BOOTSTRAP — MARGIN
-# ==============================================================================
-
-message("Running wild cluster bootstrap for margin regressions (B = 9999) ...")
-
-margin_wcb <- bind_rows(
-  run_wcb(m_margin_prepost, "SoE"),
-  run_wcb(m_margin_prepost, "postSoE")
-)
-
-margin_wcb_tbl <- format_wcb_table(
-  margin_wcb,
-  term_labels = c("SoE" = "$SOE_{st}$", "postSoE" = "$postSOE_{st}$")
-)
-
-if (SAVE_CSV) write.csv(margin_wcb, "tables_csv/10b_tab_margin_wcb.csv", row.names = FALSE)
-
-save_tex(
-  kbl(margin_wcb_tbl,
-      format  = "latex", booktabs = TRUE, escape = FALSE,
-      caption = "Wild cluster bootstrap inference for SOE and post-SOE margin effects. OLS estimates from the baseline model (Table~\\ref{tab:margin_reg}); confidence intervals and $p$-values from wild cluster bootstrap with Webb (2023) weights ($B = 9{,}999$ replications, $G = 5$ state clusters).",
-      label   = "tab:margin_wcb",
-      align   = "lrrr") %>%
-    kable_styling(latex_options = c("hold_position")),
-  "10b_tab_margin_wcb.tex"
-)
-message("Saved: tables_latex/10b_tab_margin_wcb.tex")
 
 message("Price and margin regressions complete.")

@@ -29,7 +29,7 @@ pacman::p_load(
   ggplot2, scales,
   fixest, broom,
   knitr, kableExtra,
-  readxl, rlang, ggpattern
+  readxl, rlang, ggpattern, remotes
 )
 
 options(dplyr.summarise.inform = FALSE)
@@ -42,7 +42,7 @@ for (d in c("figures", "tables_csv", "tables_latex", "tables_latex/net_price", "
 # ---- Global flags ------------------------------------------------------------
 
 # Set TRUE to also produce by-state and by-product residual trend plots
-# (Section III.D and III.E). Useful for appendix or seminar materials.
+# Useful for appendix or seminar materials.
 SAVE_OPTIONAL_PLOTS <- TRUE
 
 # Retailers to include (retailer 4 excluded: closed mid-sample)
