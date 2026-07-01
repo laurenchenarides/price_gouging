@@ -1,6 +1,8 @@
 # ==============================================================================
 # 07_uniform_pricing.R
 #
+# Mechanisms: Mechanism 1 (Constant Retail Prices / Uniform Pricing)
+#
 # Purpose: Uniform pricing analysis.
 #   Computes pairwise absolute log price differences within retailer chains
 #   across stores, by product and week. Tests whether within-chain price
@@ -9,13 +11,21 @@
 # Regression outcome: mean absolute log price difference at the
 #   (retailer, product, week) level.
 #
+# Table structure:
+#   Main results    — retailer FE only | product FE only | retailer + product FE
+#   Robustness      — retailer + month | product + month | retailer + product + month
+#   Heterogeneity   — main: no FE | product FE
+#                   — robustness: month FE | product + month FE
+#
 # Depends on: panel_est, save_tex(), SAVE_CSV
 #
 # Outputs (tables_latex/):
 #   15_tab_uniformity_summary_retail.tex
 #   16_tab_uniformity_summary_wholesale.tex
-#   17_tab_uniformity_retail.tex
-#   18_tab_uniformity_wholesale.tex
+#   17_tab_uniformity_retail_main.tex
+#   17b_tab_uniformity_retail_robust.tex
+#   18_tab_uniformity_wholesale_main.tex
+#   18b_tab_uniformity_wholesale_robust.tex
 #   19_tab_uniformity_heterog_retail.tex
 #   20_tab_uniformity_heterog_wholesale.tex
 #
@@ -27,7 +37,7 @@
 #   18_fig_uniformity_heterog_coef.png
 # ==============================================================================
 
-message("Estimating uniform pricing ...")
+message("Estimating Mechanism 1 uniform pricing ...")
 
 unif_panel <- panel_est %>%
   filter(p_ist > 0, w_ist > 0) %>%
@@ -42,7 +52,11 @@ unif_panel <- panel_est %>%
   ) %>%
   filter(!is.na(period))
 
-# Pairwise absolute log price difference within retailer-product-week cells
+
+# ==============================================================================
+# PAIRWISE LOG DIFFERENCES
+# ==============================================================================
+
 make_pairwise_logdiff <- function(df, price_col) {
   df_in <- df %>%
     select(
@@ -53,7 +67,7 @@ make_pairwise_logdiff <- function(df, price_col) {
     group_by(retailer, week_seq) %>%
     mutate(storeno = row_number()) %>%
     ungroup()
-
+  
   inner_join(
     df_in,
     df_in %>% rename(price2 = price, storeno2 = storeno, store_id2 = store_id),
@@ -68,7 +82,11 @@ make_pairwise_logdiff <- function(df, price_col) {
 pairs_retail    <- make_pairwise_logdiff(unif_panel, "p_ist")
 pairs_wholesale <- make_pairwise_logdiff(unif_panel, "w_ist")
 
-# -- Distribution plots --
+
+# ==============================================================================
+# DISTRIBUTION PLOTS
+# ==============================================================================
+
 COMMON_BINWIDTH <- 0.01
 X_LIM           <- c(0, 0.5)
 
@@ -116,7 +134,11 @@ plot_logdiff_by_period(pairs_retail,    "Within-chain retail price uniformity by
 plot_logdiff_by_period(pairs_wholesale, "Within-chain wholesale cost uniformity by SOE period",
                        "17_fig_logdiff_wholesale_by_period.png")
 
-# -- Summary tables: mean absolute log diff by retailer and period --
+
+# ==============================================================================
+# SUMMARY TABLES: mean absolute log diff by retailer and period
+# ==============================================================================
+
 make_disp_summary <- function(pairs_df, caption_str, label_str,
                               filename_csv, filename_tex) {
   tbl <- pairs_df %>%
@@ -136,9 +158,9 @@ make_disp_summary <- function(pairs_df, caption_str, label_str,
     ) %>%
     arrange(retailer, period) %>%
     mutate(across(where(is.numeric), ~round(.x, 4)))
-
+  
   if (SAVE_CSV) write.csv(tbl, file.path("tables_csv", filename_csv), row.names = FALSE)
-
+  
   save_tex(
     kbl(tbl,
         format = "latex", booktabs = TRUE,
@@ -149,11 +171,12 @@ make_disp_summary <- function(pairs_df, caption_str, label_str,
       kable_styling(latex_options = c("hold_position", "scale_down")),
     filename_tex
   )
+  message("Saved: tables_latex/", filename_tex)
 }
 
 make_disp_summary(
   pairs_retail,
-  caption_str  = "Within-chain retail price uniformity by retailer and SOE period. Values are absolute log retail price differences across store pairs within the same chain, product, and week..",
+  caption_str  = "Within-chain retail price uniformity by retailer and SOE period. Values are absolute log retail price differences across store pairs within the same chain, product, and week.",
   label_str    = "tab:uniformity_summary_retail",
   filename_csv = "09_tab_uniformity_summary_retail.csv",
   filename_tex = "15_tab_uniformity_summary_retail.tex"
@@ -167,7 +190,11 @@ make_disp_summary(
   filename_tex = "16_tab_uniformity_summary_wholesale.tex"
 )
 
-# -- Regression panel: collapse to retailer-product-week --
+
+# ==============================================================================
+# REGRESSION PANEL: collapse to retailer-product-week
+# ==============================================================================
+
 make_uniformity_panel <- function(pairs_df) {
   pairs_df %>%
     group_by(retailer, product, week_seq, period, month_fe) %>%
@@ -186,164 +213,232 @@ make_uniformity_panel <- function(pairs_df) {
 disp_retail    <- make_uniformity_panel(pairs_retail)
 disp_wholesale <- make_uniformity_panel(pairs_wholesale)
 
-# -- Pooled uniformity regressions (6 specifications) --
+
+# ==============================================================================
+# POOLED UNIFORMITY REGRESSIONS
+# ==============================================================================
+# Main results: retailer FE | product FE | retailer + product FE
+# Robustness:  retailer + month FE | product + month FE |
+#              retailer + product + month FE
+# ==============================================================================
+
 run_uniformity_regs <- function(df) {
   list(
-    A  = feols(Diff_bar ~ during + post,
-               data = df, cluster = ~ retailer_product),
-    A2 = feols(Diff_bar ~ during + post | month_fe,
-               data = df, cluster = ~ retailer_product),
-    B  = feols(Diff_bar ~ during + post | retailer + product,
-               data = df, cluster = ~ retailer_product),
-    B2 = feols(Diff_bar ~ during + post | retailer + product + month_fe,
-               data = df, cluster = ~ retailer_product),
-    C  = feols(Diff_bar ~ during + post | retailer + product,
-               data = df, cluster = ~ retailer_product),
-    C2 = feols(Diff_bar ~ during + post | retailer + product + month_fe,
-               data = df, cluster = ~ retailer_product)
+    # Main
+    main_ret     = feols(Diff_bar ~ during + post | retailer,
+                         data = df, cluster = ~ retailer_product),
+    main_prod    = feols(Diff_bar ~ during + post | product,
+                         data = df, cluster = ~ retailer_product),
+    main_ret_prod = feols(Diff_bar ~ during + post | retailer + product,
+                          data = df, cluster = ~ retailer_product),
+    # Robustness
+    rob_ret      = feols(Diff_bar ~ during + post | retailer + month_fe,
+                         data = df, cluster = ~ retailer_product),
+    rob_prod     = feols(Diff_bar ~ during + post | product + month_fe,
+                         data = df, cluster = ~ retailer_product),
+    rob_ret_prod = feols(Diff_bar ~ during + post | retailer + product + month_fe,
+                         data = df, cluster = ~ retailer_product)
   )
 }
 
 regs_retail    <- run_uniformity_regs(disp_retail)
 regs_wholesale <- run_uniformity_regs(disp_wholesale)
 
-etable(
-  list("(1)" = regs_retail$A, "(2)" = regs_retail$A2,
-       "(3)" = regs_retail$B, "(4)" = regs_retail$B2,
-       "(5)" = regs_retail$C, "(6)" = regs_retail$C2),
-  tex = TRUE, file = "tables_latex/17_tab_uniformity_retail.tex",
-  title   = "Within-chain retail price uniformity during and after SOE",
-  label   = "tab:uniformity_retail",
-  digits  = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2,
-  dict    = c("during" = "During SOE", "post" = "Post-SOE"),
-  notes   = c(
-    "Dependent variable: mean absolute log retail price difference across store pairs within retailer-product-week cells.",
-    "Omitted category: pre-SOE period.",
-    "Standard errors clustered at the retailer-product level."
-  )
+UNIF_DICT  <- c("during" = "During SOE", "post" = "Post-SOE")
+UNIF_NOTES_MAIN <- c(
+  "Omitted category: pre-SOE period.",
+  "Standard errors clustered at the retailer-product level."
 )
-message("Saved: tables_latex/17_tab_uniformity_retail.tex")
-
-etable(
-  list("(1)" = regs_wholesale$A, "(2)" = regs_wholesale$A2,
-       "(3)" = regs_wholesale$B, "(4)" = regs_wholesale$B2,
-       "(5)" = regs_wholesale$C, "(6)" = regs_wholesale$C2),
-  tex = TRUE, file = "tables_latex/18_tab_uniformity_wholesale.tex",
-  title   = "Within-chain wholesale cost uniformity during and after SOE",
-  label   = "tab:uniformity_wholesale",
-  digits  = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2,
-  dict    = c("during" = "During SOE", "post" = "Post-SOE"),
-  notes   = c(
-    "Dependent variable: mean absolute log wholesale cost difference across store pairs within retailer-product-week cells.",
-    "Omitted category: pre-SOE period.",
-    "Standard errors clustered at the retailer-product level."
-  )
+UNIF_NOTES_ROB <- c(
+  "Robustness checks add month fixed effects to each specification.",
+  "Omitted category: pre-SOE period.",
+  "Standard errors clustered at the retailer-product level."
 )
-message("Saved: tables_latex/18_tab_uniformity_wholesale.tex")
 
-# -- Retailer heterogeneity uniformity regressions --
+# Retail — main
+etable(
+  list("(1) Retailer FE"          = regs_retail$main_ret,
+       "(2) Product FE"            = regs_retail$main_prod,
+       "(3) Retailer + Product FE" = regs_retail$main_ret_prod),
+  tex = TRUE, file = "tables_latex/17_tab_uniformity_retail_main.tex",
+  title   = "Within-chain retail price uniformity: main results",
+  label   = "tab:uniformity_retail_main",
+  digits  = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2,
+  dict    = UNIF_DICT, notes = UNIF_NOTES_MAIN
+)
+message("Saved: tables_latex/17_tab_uniformity_retail_main.tex")
+
+# Retail — robustness
+etable(
+  list("(1) Retailer + Month FE"           = regs_retail$rob_ret,
+       "(2) Product + Month FE"             = regs_retail$rob_prod,
+       "(3) Retailer + Product + Month FE"  = regs_retail$rob_ret_prod),
+  tex = TRUE, file = "tables_latex/17b_tab_uniformity_retail_robust.tex",
+  title   = "Within-chain retail price uniformity: robustness (month FEs added)",
+  label   = "tab:uniformity_retail_robust",
+  digits  = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2,
+  dict    = UNIF_DICT, notes = UNIF_NOTES_ROB
+)
+message("Saved: tables_latex/17b_tab_uniformity_retail_robust.tex")
+
+# Wholesale — main
+etable(
+  list("(1) Retailer FE"          = regs_wholesale$main_ret,
+       "(2) Product FE"            = regs_wholesale$main_prod,
+       "(3) Retailer + Product FE" = regs_wholesale$main_ret_prod),
+  tex = TRUE, file = "tables_latex/18_tab_uniformity_wholesale_main.tex",
+  title   = "Within-chain wholesale cost uniformity: main results",
+  label   = "tab:uniformity_wholesale_main",
+  digits  = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2,
+  dict    = UNIF_DICT, notes = UNIF_NOTES_MAIN
+)
+message("Saved: tables_latex/18_tab_uniformity_wholesale_main.tex")
+
+# Wholesale — robustness
+etable(
+  list("(1) Retailer + Month FE"           = regs_wholesale$rob_ret,
+       "(2) Product + Month FE"             = regs_wholesale$rob_prod,
+       "(3) Retailer + Product + Month FE"  = regs_wholesale$rob_ret_prod),
+  tex = TRUE, file = "tables_latex/18b_tab_uniformity_wholesale_robust.tex",
+  title   = "Within-chain wholesale cost uniformity: robustness (month FEs added)",
+  label   = "tab:uniformity_wholesale_robust",
+  digits  = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2,
+  dict    = UNIF_DICT, notes = UNIF_NOTES_ROB
+)
+message("Saved: tables_latex/18b_tab_uniformity_wholesale_robust.tex")
+
+
+# ==============================================================================
+# RETAILER HETEROGENEITY REGRESSIONS
+# ==============================================================================
+# no additional FE | product FE
+# month FE         | product + month FE
+# ==============================================================================
+
 run_heterog_regs <- function(df) {
   list(
-    A  = feols(Diff_bar ~ 0 + i(retailer, during) + i(retailer, post),
-               data = df, cluster = ~ retailer_product),
-    A2 = feols(Diff_bar ~ 0 + i(retailer, during) + i(retailer, post) | month_fe,
-               data = df, cluster = ~ retailer_product),
-    B  = feols(Diff_bar ~ 0 + i(retailer, during) + i(retailer, post) | product,
-               data = df, cluster = ~ retailer_product),
-    B2 = feols(Diff_bar ~ 0 + i(retailer, during) + i(retailer, post) | product + month_fe,
-               data = df, cluster = ~ retailer_product)
+    main_no_fe   = feols(Diff_bar ~ 0 + i(retailer, during) + i(retailer, post),
+                         data = df, cluster = ~ retailer_product),
+    main_prod    = feols(Diff_bar ~ 0 + i(retailer, during) + i(retailer, post) | product,
+                         data = df, cluster = ~ retailer_product),
+    rob_month    = feols(Diff_bar ~ 0 + i(retailer, during) + i(retailer, post) | month_fe,
+                         data = df, cluster = ~ retailer_product),
+    rob_prod_month = feols(Diff_bar ~ 0 + i(retailer, during) + i(retailer, post) | product + month_fe,
+                           data = df, cluster = ~ retailer_product)
   )
 }
 
 heterog_retail    <- run_heterog_regs(disp_retail)
 heterog_wholesale <- run_heterog_regs(disp_wholesale)
 
-heterog_notes <- c(
+HETEROG_NOTES <- c(
   "Each coefficient is a retailer-specific SOE or post-SOE deviation from the pre-SOE period.",
   "Standard errors clustered at the retailer-product level."
 )
 
+# Retail heterogeneity — combined (main + robustness)
 etable(
-  list("(1)" = heterog_retail$A, "(2)" = heterog_retail$A2,
-       "(3)" = heterog_retail$B, "(4)" = heterog_retail$B2),
+  list("(1) No FE"             = heterog_retail$main_no_fe,
+       "(2) Product FE"         = heterog_retail$main_prod,
+       "(3) Month FE"           = heterog_retail$rob_month,
+       "(4) Product + Month FE" = heterog_retail$rob_prod_month),
   tex = TRUE, file = "tables_latex/19_tab_uniformity_heterog_retail.tex",
   title  = "Retailer heterogeneity in within-chain retail price uniformity",
   label  = "tab:uniformity_heterog_retail",
   digits = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2,
-  notes  = heterog_notes
+  notes  = HETEROG_NOTES
 )
 message("Saved: tables_latex/19_tab_uniformity_heterog_retail.tex")
 
+# Wholesale heterogeneity — combined (main + robustness)
 etable(
-  list("(1)" = heterog_wholesale$A, "(2)" = heterog_wholesale$A2,
-       "(3)" = heterog_wholesale$B, "(4)" = heterog_wholesale$B2),
+  list("(1) No FE"             = heterog_wholesale$main_no_fe,
+       "(2) Product FE"         = heterog_wholesale$main_prod,
+       "(3) Month FE"           = heterog_wholesale$rob_month,
+       "(4) Product + Month FE" = heterog_wholesale$rob_prod_month),
   tex = TRUE, file = "tables_latex/20_tab_uniformity_heterog_wholesale.tex",
   title  = "Retailer heterogeneity in within-chain wholesale cost uniformity",
   label  = "tab:uniformity_heterog_wholesale",
   digits = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2,
-  notes  = heterog_notes
+  notes  = HETEROG_NOTES
 )
 message("Saved: tables_latex/20_tab_uniformity_heterog_wholesale.tex")
 
-# -- Coefficient plot for retailer heterogeneity --
-extract_heterog_coef <- function(heterog_list, outcome_label) {
-  model_pairs <- list(
-    list(no_fe = "A",  with_fe = "A2", label = "No additional FEs"),
-    list(no_fe = "B",  with_fe = "B2", label = "Product FE")
-  )
-  purrr::map_dfr(model_pairs, function(pair) {
-    bind_rows(
-      broom::tidy(heterog_list[[pair$no_fe]],  conf.int = TRUE) %>%
-        mutate(month_fe = "No month FE"),
-      broom::tidy(heterog_list[[pair$with_fe]], conf.int = TRUE) %>%
-        mutate(month_fe = "Month FE")
-    ) %>%
-      filter(grepl(":during$|:post$", term)) %>%
-      mutate(
-        retailer = sub(".*retailer::([^:]+):.*", "\\1", term),
-        period   = if_else(grepl(":during$", term), "During SOE", "Post-SOE"),
-        fe_spec  = pair$label,
-        outcome  = outcome_label
-      )
-  })
+
+# ==============================================================================
+# COEFFICIENT PLOTS FOR RETAILER HETEROGENEITY
+# ==============================================================================
+
+extract_heterog_coef <- function(heterog_list, outcome_label, specs, spec_label) {
+  purrr::map_dfr(specs, function(s) {
+    broom::tidy(heterog_list[[s$key]], conf.int = TRUE) %>%
+      mutate(spec = s$label)
+  }) %>%
+    filter(grepl(":during$|:post$", term)) %>%
+    mutate(
+      retailer = sub(".*retailer::([^:]+):.*", "\\1", term),
+      period   = if_else(grepl(":during$", term), "During SOE", "Post-SOE"),
+      outcome  = outcome_label,
+      spec_grp = spec_label
+    )
 }
 
-heterog_coef_df <- bind_rows(
-  extract_heterog_coef(heterog_retail,    "Retail"),
-  extract_heterog_coef(heterog_wholesale, "Wholesale")
+main_specs <- list(
+  list(key = "main_no_fe", label = "No additional FE"),
+  list(key = "main_prod",  label = "Product FE")
+)
+rob_specs <- list(
+  list(key = "rob_month",      label = "Month FE"),
+  list(key = "rob_prod_month", label = "Product + Month FE")
+)
+
+build_heterog_plot <- function(coef_df, title_str, filename) {
+  g <- ggplot(coef_df,
+              aes(x = retailer, y = estimate, ymin = conf.low, ymax = conf.high,
+                  color = period, shape = period)) +
+    geom_hline(yintercept = 0, linetype = "dashed") +
+    geom_pointrange(position = position_dodge(width = 0.6)) +
+    geom_text(aes(label = round(estimate, 3)),
+              position = position_dodge(width = 0.6),
+              vjust = -1.0, size = 2.8, show.legend = FALSE) +
+    scale_shape_manual(values = c("During SOE" = 16, "Post-SOE" = 17)) +
+    facet_grid(outcome ~ spec) +
+    labs(
+      x        = "Retailer",
+      y        = "Coefficient (mean absolute log price diff)",
+      title    = title_str,
+      color    = NULL, shape = NULL
+    ) +
+    theme_bw() +
+    theme(legend.position = "top", strip.text = element_text(size = 9))
+  
+  ggsave(file.path("figures", filename), g, width = 11, height = 8, dpi = 300)
+  message("Saved: figures/", filename)
+  invisible(g)
+}
+
+# Combined coefficient plot (main + robustness, faceted by outcome x spec)
+all_specs <- list(
+  list(key = "main_no_fe",     label = "No FE"),
+  list(key = "main_prod",      label = "Product FE"),
+  list(key = "rob_month",      label = "Month FE"),
+  list(key = "rob_prod_month", label = "Product + Month FE")
+)
+
+heterog_all_df <- bind_rows(
+  extract_heterog_coef(heterog_retail,    "Retail",    all_specs, "all"),
+  extract_heterog_coef(heterog_wholesale, "Wholesale", all_specs, "all")
 ) %>%
   mutate(
-    fe_spec  = factor(fe_spec,  levels = c("No additional FEs", "Product FE")),
-    month_fe = factor(month_fe, levels = c("No month FE", "Month FE")),
-    period   = factor(period,   levels = c("During SOE", "Post-SOE")),
-    outcome  = factor(outcome,  levels = c("Retail", "Wholesale"))
+    spec    = factor(spec,    levels = c("No FE", "Product FE", "Month FE", "Product + Month FE")),
+    period  = factor(period,  levels = c("During SOE", "Post-SOE")),
+    outcome = factor(outcome, levels = c("Retail", "Wholesale"))
   )
 
-g_heterog_coef <- ggplot(heterog_coef_df,
-                         aes(x = retailer, y = estimate, ymin = conf.low, ymax = conf.high,
-                             color = period, shape = month_fe)) +
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  geom_pointrange(position = position_dodge(width = 0.6)) +
-  geom_text(aes(label = round(estimate, 3)),
-            position = position_dodge(width = 0.6),
-            vjust = -1.0, size = 2.8, show.legend = FALSE) +
-  facet_grid(outcome ~ fe_spec) +
-  labs(
-    x        = "Retailer",
-    y        = "Coefficient (mean absolute log price diff)",
-    title    = "Retailer heterogeneity in within-chain price uniformity during and after SOE",
-    subtitle = "Rows: retail vs wholesale. Columns: FE specification. Shape: with vs without month FE.",
-    color    = NULL,
-    shape    = NULL
-  ) +
-  theme_bw() +
-  theme(legend.position = "top", plot.subtitle = element_text(size = 8),
-        strip.text = element_text(size = 9))
-
-g_heterog_coef
-
-ggsave("figures/18_fig_uniformity_heterog_coef.png", g_heterog_coef,
-       width = 13, height = 8, dpi = 300)
-message("Saved: figures/18_fig_uniformity_heterog_coef.png")
+build_heterog_plot(
+  heterog_all_df,
+  title_str = "Retailer heterogeneity in within-chain price uniformity",
+  filename  = "18_fig_uniformity_heterog_coef.png"
+)
 
 message("Uniform pricing analysis complete.")

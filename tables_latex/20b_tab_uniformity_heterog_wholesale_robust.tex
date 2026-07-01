@@ -1,0 +1,41 @@
+
+\begin{table}[htbp]
+   \caption{\label{tab:uniformity_heterog_wholesale_robust} Retailer heterogeneity in within-chain wholesale cost uniformity: robustness}
+   \centering
+   \begin{tabular}{lcc}
+      \tabularnewline \midrule \midrule
+      Model:                          & (1)          & (2)\\  
+      \midrule
+      \emph{Variables}\\
+      during $\times$ retailer $=$ 2  & 0.018$^{*}$  & 0.018$^{***}$\\   
+                                      & (0.008)      & (0.006)\\   
+      during $\times$ retailer $=$ 3  & 0.002        & 0.002\\   
+                                      & (0.008)      & (0.005)\\   
+      during $\times$ retailer $=$ 5  & 0.001        & 0.001\\   
+                                      & (0.005)      & (0.005)\\   
+      post $\times$ retailer $=$ 2    & 0.024$^{**}$ & 0.024$^{***}$\\   
+                                      & (0.009)      & (0.006)\\   
+      post $\times$ retailer $=$ 3    & 0.009        & 0.009\\   
+                                      & (0.007)      & (0.006)\\   
+      post $\times$ retailer $=$ 5    & -0.0005      & 0.0003\\   
+                                      & (0.005)      & (0.009)\\   
+      \midrule
+      \emph{Fixed-effects}\\
+      month\_fe                       & Yes          & Yes\\  
+      product                         &              & Yes\\  
+      \midrule
+      \emph{Fit statistics}\\
+      Observations                    & 4,467        & 4,467\\  
+      R$^2$                           & 0.11675      & 0.25779\\  
+      \midrule \midrule
+      \multicolumn{3}{l}{\emph{Clustered (retailer\_product) standard-errors in parentheses}}\\
+      \multicolumn{3}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+   \end{tabular}
+   
+   \par \raggedright 
+   Robustness checks add month fixed effects.\\
+   Each coefficient is a retailer-specific SOE or post-SOE deviation from the pre-SOE period.\\
+   Standard errors clustered at the retailer-product level.
+\end{table}
+
+

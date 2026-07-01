@@ -4,29 +4,29 @@
    \centering
    \begin{tabular}{lcccc}
       \tabularnewline \midrule \midrule
-      Model:                          & (1)           & (2)          & (3)            & (4)\\  
+      Model:                          & (1)           & (2)            & (3)          & (4)\\  
       \midrule
       \emph{Variables}\\
-      during $\times$ retailer $=$ 2  & 0.040$^{***}$ & 0.003        & -0.010         & 0.003\\   
-                                      & (0.008)       & (0.012)      & (0.009)        & (0.012)\\   
-      during $\times$ retailer $=$ 3  & 0.037$^{***}$ & -0.001       & -0.014$^{*}$   & -0.001\\   
-                                      & (0.005)       & (0.008)      & (0.008)        & (0.008)\\   
-      during $\times$ retailer $=$ 5  & 0.024$^{***}$ & -0.014       & -0.027$^{***}$ & -0.014\\   
-                                      & (0.004)       & (0.009)      & (0.007)        & (0.009)\\   
-      post $\times$ retailer $=$ 2    & 0.036$^{***}$ & -0.006       & -0.014$^{*}$   & -0.006\\   
-                                      & (0.003)       & (0.013)      & (0.008)        & (0.013)\\   
-      post $\times$ retailer $=$ 3    & 0.050$^{***}$ & 0.006        & -0.001         & 0.005\\   
-                                      & (0.010)       & (0.013)      & (0.010)        & (0.013)\\   
-      post $\times$ retailer $=$ 5    & 0.020$^{**}$  & -0.024$^{*}$ & -0.031$^{**}$  & -0.024$^{*}$\\   
-                                      & (0.008)       & (0.012)      & (0.013)        & (0.012)\\   
+      during $\times$ retailer $=$ 2  & 0.040$^{***}$ & -0.010         & 0.003        & 0.003\\   
+                                      & (0.008)       & (0.009)        & (0.012)      & (0.012)\\   
+      during $\times$ retailer $=$ 3  & 0.037$^{***}$ & -0.014$^{*}$   & -0.001       & -0.001\\   
+                                      & (0.005)       & (0.008)        & (0.008)      & (0.008)\\   
+      during $\times$ retailer $=$ 5  & 0.024$^{***}$ & -0.027$^{***}$ & -0.014       & -0.014\\   
+                                      & (0.004)       & (0.007)        & (0.009)      & (0.009)\\   
+      post $\times$ retailer $=$ 2    & 0.036$^{***}$ & -0.014$^{*}$   & -0.006       & -0.006\\   
+                                      & (0.003)       & (0.008)        & (0.013)      & (0.013)\\   
+      post $\times$ retailer $=$ 3    & 0.050$^{***}$ & -0.001         & 0.006        & 0.005\\   
+                                      & (0.010)       & (0.010)        & (0.013)      & (0.013)\\   
+      post $\times$ retailer $=$ 5    & 0.020$^{**}$  & -0.031$^{**}$  & -0.024$^{*}$ & -0.024$^{*}$\\   
+                                      & (0.008)       & (0.013)        & (0.012)      & (0.012)\\   
       \midrule
       \emph{Fixed-effects}\\
-      month\_fe                       &               & Yes          &                & Yes\\  
-      product                         &               &              & Yes            & Yes\\  
+      product                         &               & Yes            &              & Yes\\  
+      month\_fe                       &               &                & Yes          & Yes\\  
       \midrule
       \emph{Fit statistics}\\
-      Observations                    & 4,467         & 4,467        & 4,467          & 4,467\\  
-      R$^2$                           & -0.38146      & 0.10326      & 0.06796        & 0.11571\\  
+      Observations                    & 4,467         & 4,467          & 4,467        & 4,467\\  
+      R$^2$                           & -0.38146      & 0.06796        & 0.10326      & 0.11571\\  
       \midrule \midrule
       \multicolumn{5}{l}{\emph{Clustered (retailer\_product) standard-errors in parentheses}}\\
       \multicolumn{5}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
@@ -34,6 +34,7 @@
    
    \par \raggedright 
    Each coefficient is a retailer-specific SOE or post-SOE deviation from the pre-SOE period.\\
+   Columns (1)--(2): no month FEs (main). Columns (3)--(4): month FEs added (robustness).\\
    Standard errors clustered at the retailer-product level.
 \end{table}
 
