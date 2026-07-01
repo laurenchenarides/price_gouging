@@ -1,7 +1,7 @@
 # ==============================================================================
 # 07_uniform_pricing.R
 #
-# Purpose: Section IV.D uniform pricing analysis.
+# Purpose: Uniform pricing analysis.
 #   Computes pairwise absolute log price differences within retailer chains
 #   across stores, by product and week. Tests whether within-chain price
 #   uniformity changed during and after the SOE.
@@ -27,7 +27,7 @@
 #   18_fig_uniformity_heterog_coef.png
 # ==============================================================================
 
-message("Estimating Section IV.D uniform pricing ...")
+message("Estimating uniform pricing ...")
 
 unif_panel <- panel_est %>%
   filter(p_ist > 0, w_ist > 0) %>%
@@ -153,7 +153,7 @@ make_disp_summary <- function(pairs_df, caption_str, label_str,
 
 make_disp_summary(
   pairs_retail,
-  caption_str  = "Within-chain retail price uniformity by retailer and SOE period. Values are absolute log retail price differences across store pairs within the same chain, product, and week. Retailer 4 excluded.",
+  caption_str  = "Within-chain retail price uniformity by retailer and SOE period. Values are absolute log retail price differences across store pairs within the same chain, product, and week..",
   label_str    = "tab:uniformity_summary_retail",
   filename_csv = "09_tab_uniformity_summary_retail.csv",
   filename_tex = "15_tab_uniformity_summary_retail.tex"
@@ -161,7 +161,7 @@ make_disp_summary(
 
 make_disp_summary(
   pairs_wholesale,
-  caption_str  = "Within-chain wholesale cost uniformity by retailer and SOE period. Values are absolute log wholesale cost differences across store pairs within the same chain, product, and week. Retailer 4 excluded.",
+  caption_str  = "Within-chain wholesale cost uniformity by retailer and SOE period. Values are absolute log wholesale cost differences across store pairs within the same chain, product, and week.",
   label_str    = "tab:uniformity_summary_wholesale",
   filename_csv = "10_tab_uniformity_summary_wholesale.csv",
   filename_tex = "16_tab_uniformity_summary_wholesale.tex"
@@ -339,6 +339,8 @@ g_heterog_coef <- ggplot(heterog_coef_df,
   theme_bw() +
   theme(legend.position = "top", plot.subtitle = element_text(size = 8),
         strip.text = element_text(size = 9))
+
+g_heterog_coef
 
 ggsave("figures/18_fig_uniformity_heterog_coef.png", g_heterog_coef,
        width = 13, height = 8, dpi = 300)
