@@ -317,8 +317,6 @@ message("Saved: tables_latex/18b_tab_uniformity_wholesale_robust.tex")
 
 run_heterog_regs <- function(df) {
   list(
-    main_no_fe   = feols(Diff_bar ~ 0 + i(retailer, during) + i(retailer, post),
-                         data = df, cluster = ~ retailer_product),
     main_prod    = feols(Diff_bar ~ 0 + i(retailer, during) + i(retailer, post) | product,
                          data = df, cluster = ~ retailer_product),
     rob_month    = feols(Diff_bar ~ 0 + i(retailer, during) + i(retailer, post) | month_fe,
@@ -338,10 +336,9 @@ HETEROG_NOTES <- c(
 
 # Retail heterogeneity — combined (main + robustness)
 etable(
-  list("(1) No FE"             = heterog_retail$main_no_fe,
-       "(2) Product FE"         = heterog_retail$main_prod,
-       "(3) Month FE"           = heterog_retail$rob_month,
-       "(4) Product + Month FE" = heterog_retail$rob_prod_month),
+  list("(1) Product FE"         = heterog_retail$main_prod,
+       "(2) Month FE"           = heterog_retail$rob_month,
+       "(3) Product + Month FE" = heterog_retail$rob_prod_month),
   tex = TRUE, file = "tables_latex/19_tab_uniformity_heterog_retail.tex",
   title  = "Retailer heterogeneity in within-chain retail price uniformity",
   label  = "tab:uniformity_heterog_retail",
@@ -352,10 +349,9 @@ message("Saved: tables_latex/19_tab_uniformity_heterog_retail.tex")
 
 # Wholesale heterogeneity — combined (main + robustness)
 etable(
-  list("(1) No FE"             = heterog_wholesale$main_no_fe,
-       "(2) Product FE"         = heterog_wholesale$main_prod,
-       "(3) Month FE"           = heterog_wholesale$rob_month,
-       "(4) Product + Month FE" = heterog_wholesale$rob_prod_month),
+  list("(1) Product FE"         = heterog_wholesale$main_prod,
+       "(2) Month FE"           = heterog_wholesale$rob_month,
+       "(3) Product + Month FE" = heterog_wholesale$rob_prod_month),
   tex = TRUE, file = "tables_latex/20_tab_uniformity_heterog_wholesale.tex",
   title  = "Retailer heterogeneity in within-chain wholesale cost uniformity",
   label  = "tab:uniformity_heterog_wholesale",
@@ -384,7 +380,6 @@ extract_heterog_coef <- function(heterog_list, outcome_label, specs, spec_label)
 }
 
 main_specs <- list(
-  list(key = "main_no_fe", label = "No additional FE"),
   list(key = "main_prod",  label = "Product FE")
 )
 rob_specs <- list(
@@ -419,7 +414,6 @@ build_heterog_plot <- function(coef_df, title_str, filename) {
 
 # Combined coefficient plot (main + robustness, faceted by outcome x spec)
 all_specs <- list(
-  list(key = "main_no_fe",     label = "No FE"),
   list(key = "main_prod",      label = "Product FE"),
   list(key = "rob_month",      label = "Month FE"),
   list(key = "rob_prod_month", label = "Product + Month FE")
@@ -430,7 +424,7 @@ heterog_all_df <- bind_rows(
   extract_heterog_coef(heterog_wholesale, "Wholesale", all_specs, "all")
 ) %>%
   mutate(
-    spec    = factor(spec,    levels = c("No FE", "Product FE", "Month FE", "Product + Month FE")),
+    spec    = factor(spec,    levels = c("Product FE", "Month FE", "Product + Month FE")),
     period  = factor(period,  levels = c("During SOE", "Post-SOE")),
     outcome = factor(outcome, levels = c("Retail", "Wholesale"))
   )
