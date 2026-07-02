@@ -1,0 +1,38 @@
+
+\begin{table}[htbp]
+   \caption{\label{tab:gross_price_stability} Gross price stability during SOE: posted shelf price vs.\ net transaction price}
+   \centering
+   \begin{tabular}{lccc}
+      \tabularnewline \midrule \midrule
+       & \multicolumn{2}{c}{Gross price $p^{gross}$ (\$/unit)} & Net price $p^{net}$ (\$/unit) \\ 
+      Model:          & (1)           & (2)     & (3)\\  
+      \midrule
+      \emph{Variables}\\
+      SOE$_{st}$      & 0.009$^{*}$   & -0.001  & -0.194$^{***}$\\   
+                      & (0.003)       & (0.002) & (0.005)\\   
+      Post-SOE$_{st}$ & 0.177$^{***}$ &         & 0.038$^{***}$\\   
+                      & (0.002)       &         & (0.002)\\   
+      \midrule
+      \emph{Fixed-effects}\\
+      product         & Yes           & Yes     & Yes\\  
+      store\_id       & Yes           & Yes     & Yes\\  
+      week\_fe        &               & Yes     & \\  
+      \midrule
+      \emph{Fit statistics}\\
+      Observations    & 606,546       & 606,546 & 606,546\\  
+      R$^2$           & 0.89007       & 0.89951 & 0.79273\\  
+      \midrule \midrule
+      \multicolumn{4}{l}{\emph{Clustered (sst) standard-errors in parentheses}}\\
+      \multicolumn{4}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+   \end{tabular}
+   
+   \par \raggedright 
+   Columns (1)--(2): dependent variable is the revenue-weighted gross (shelf) price.\\
+   Column (3): dependent variable is the revenue-weighted net (transaction) price.\\
+   A near-zero SOE coefficient on the gross price alongside a negative coefficient\\
+   on the net price confirms that the net price decline was driven by promotional\\
+   expansion (more transactions at the existing sale price), not shelf price reductions.\\
+   FEs: product and store. Column (2) adds week FEs. Standard errors clustered at the state level.
+\end{table}
+
+

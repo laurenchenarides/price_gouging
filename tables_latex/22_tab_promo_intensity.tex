@@ -1,0 +1,39 @@
+
+\begin{table}[htbp]
+   \caption{\label{tab:promo_intensity} Effect of SOE on promotional intensity: share on sale and discount depth}
+   \centering
+   \begin{tabular}{lccc}
+      \tabularnewline \midrule \midrule
+       & \multicolumn{2}{c}{Share on sale} & Discount depth (\$/unit) \\ 
+      Model:          & (1)           & (2)     & (3)\\  
+      \midrule
+      \emph{Variables}\\
+      SOE$_{st}$      & 0.452$^{***}$ & -0.017  & 0.027$^{**}$\\   
+                      & (0.006)       & (0.009) & (0.008)\\   
+      Post-SOE$_{st}$ & 0.315$^{***}$ &         & -0.028$^{**}$\\   
+                      & (0.002)       &         & (0.008)\\   
+      \midrule
+      \emph{Fixed-effects}\\
+      product         & Yes           & Yes     & Yes\\  
+      store\_id       & Yes           & Yes     & Yes\\  
+      week\_fe        &               & Yes     & \\  
+      \midrule
+      \emph{Fit statistics}\\
+      Observations    & 606,546       & 606,546 & 263,894\\  
+      R$^2$           & 0.47816       & 0.55532 & 0.58082\\  
+      \midrule \midrule
+      \multicolumn{4}{l}{\emph{Clustered (sst) standard-errors in parentheses}}\\
+      \multicolumn{4}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+   \end{tabular}
+   
+   \par \raggedright 
+   Columns (1)--(2): dependent variable is share of transactions at promotional price.\\
+   Column (3): dependent variable is regular price minus sale price, conditional on a promotion running.\\
+   Promotion frequency (share on sale) rose sharply during the SOE (from 0.5--20\% pre-SOE\\
+   to 37--91\% during SOE depending on product), consistent with countercyclical promotional pricing.\\
+   Intra-day price variation is absent: on any store-day, all shoppers pay the same price.\\
+   The mechanism is inter-temporal -- retailers switched more weeks into promotion mode.\\
+   FEs: product and store. Column (2) adds week FEs. Standard errors clustered at the state level.
+\end{table}
+
+

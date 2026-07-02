@@ -2,49 +2,34 @@
 \begin{table}[htbp]
    \caption{\label{tab:gross_net_gap} Effect of SOE on gross--net price gap (promotional discount per unit)}
    \centering
-   \begin{tabular}{lcc}
+   \begin{tabular}{lc}
       \tabularnewline \midrule \midrule
-       & \multicolumn{2}{c}{$p^{gross}_{ist} - p^{net}_{ist}$ (\$/unit)} \\ 
-      Model:                               & (1)           & (2)\\  
+                      & $p^{gross}_{ist} - p^{net}_{ist}$ (\$/unit) \\    
+      Model:          & (1)\\  
       \midrule
       \emph{Variables}\\
-      SOE$_{st}$                           & 0.202$^{***}$ &   \\   
-                                           & (0.002)       &   \\   
-      Post-SOE$_{st}$                      & 0.140$^{***}$ &   \\   
-                                           & (0.002)       &   \\   
-      SOE$_{st}$ $\times$ sst $=$ FL       &               & 0.200$^{***}$\\   
-                                           &               & (0.003)\\   
-      SOE$_{st}$ $\times$ sst $=$ GA       &               & 0.201$^{***}$\\   
-                                           &               & (0.003)\\   
-      SOE$_{st}$ $\times$ sst $=$ LA       &               & 0.209$^{***}$\\   
-                                           &               & (0.0007)\\   
-      SOE$_{st}$ $\times$ sst $=$ MS       &               & 0.202$^{***}$\\   
-                                           &               & (0.002)\\   
-      Post-SOE$_{st}$ $\times$ sst $=$ FL  &               & 0.140$^{***}$\\   
-                                           &               & (0.002)\\   
-      Post-SOE$_{st}$ $\times$ sst $=$ GA  &               & 0.166$^{***}$\\   
-                                           &               & (0.010)\\   
-      Post-SOE$_{st}$ $\times$ sst $=$ LA  &               & 0.142$^{***}$\\   
-                                           &               & (0.0010)\\   
-      Post-SOE$_{st}$ $\times$ sst $=$ MS  &               & 0.112$^{***}$\\   
-                                           &               & (0.003)\\   
+      SOE$_{st}$      & 0.202$^{***}$\\   
+                      & (0.002)\\   
+      Post-SOE$_{st}$ & 0.140$^{***}$\\   
+                      & (0.002)\\   
       \midrule
       \emph{Fixed-effects}\\
-      product                              & Yes           & Yes\\  
-      store\_id                            & Yes           & Yes\\  
+      product         & Yes\\  
+      store\_id       & Yes\\  
       \midrule
       \emph{Fit statistics}\\
-      Observations                         & 604,121       & 604,121\\  
-      R$^2$                                & 0.39149       & 0.38136\\  
+      Observations    & 604,121\\  
+      R$^2$           & 0.39149\\  
       \midrule \midrule
-      \multicolumn{3}{l}{\emph{Clustered (store\_id) standard-errors in parentheses}}\\
-      \multicolumn{3}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+      \multicolumn{2}{l}{\emph{Clustered (sst) standard-errors in parentheses}}\\
+      \multicolumn{2}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
    \end{tabular}
    
    \par \raggedright 
    Dependent variable: gross price minus net price (dollars per unit or lb).\\
-   A positive SOE coefficient means the discount deepened during the emergency.\\
-   FEs: product and store. Standard errors clustered at the store level.
+   A positive SOE coefficient means more transactions occurred at promotional prices during the emergency.\\
+   When no promotion is running, gross equals net and the gap is zero.\\
+   FEs: product and store. Standard errors clustered at the state level.
 \end{table}
 
 
