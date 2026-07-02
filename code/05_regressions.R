@@ -55,7 +55,7 @@ reg_data <- panel_est %>%
 # clustid must be a column name present in the model's data.
 # ==============================================================================
 
-run_wcb <- function(model, param, B = 999, seed = 42) {
+run_wcb <- function(model, param, B = 9999, seed = 42) {
   set.seed(seed)
   dqrng::dqset.seed(seed)
   bt <- boottest(

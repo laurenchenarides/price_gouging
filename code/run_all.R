@@ -15,8 +15,8 @@
 #   03_descriptive_tables.R            Results: Descriptive Evidence + Incidence of Price Gouging
 #   04_residual_plots.R                Results: Descriptive Evidence
 #   05_regressions.R                   Empirical Model + Results: Retail Prices + Markups
-#   06_passthrough.R                   Mechanisms: Mechanism 2 (Variation in Pass-Through)
-#   07_uniform_pricing.R               Mechanisms: Mechanism 1 (Constant Retail Prices)
+#   06_uniform_pricing.R               Mechanisms: Mechanism 1 (Constant Retail Prices)
+#   07_passthrough.R                   Mechanisms: Mechanism 2 (Variation in Pass-Through)
 #   08_demand_rotation.R               Mechanisms: Mechanism 3 (Countercyclical Pricing)
 # ==============================================================================
 
@@ -62,11 +62,10 @@ source("code/01_price_sensitivity_diagnostic.R")
 source("code/02_build_panel.R")
 source("code/03_descriptive_tables.R")
 source("code/04_residual_plots.R")
-
 source("code/05_regressions.R")
+source("code/06_uniform_pricing.R")
+source("code/07_passthrough.R")
 
-source("code/06_passthrough.R")
-source("code/07_uniform_pricing.R")
 source("code/08_demand_rotation.R")
 
 message("=== Analysis complete. ===")

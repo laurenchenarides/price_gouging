@@ -121,6 +121,8 @@ g_gap <- ggplot(gap_weekly, aes(x = week_start, y = mean_gap)) +
   theme_bw() +
   theme(plot.subtitle = element_text(size = 8))
 
+g_gap
+
 ggsave("figures/19_fig_gross_net_gap.png", g_gap, width = 10, height = 5, dpi = 300)
 message("Saved: figures/19_fig_gross_net_gap.png")
 
@@ -139,6 +141,8 @@ message("Saved: figures/19_fig_gross_net_gap.png")
 # panel_est (pulled in 00_read_in_data.R) is used as a fallback for the
 # share_on_sale regression only.
 # ==============================================================================
+
+gc()
 
 # -- Attempt to load promotional panel from SQL --------------------------------
 promo_panel <- tryCatch({

@@ -142,8 +142,8 @@ Scripts are called in order by `run_all.R`. The table below maps each script to 
 | `03_descriptive_tables.R` | Results: Descriptive Evidence; Incidence of Price Gouging | Coverage tables, period means, flagged-weeks | Tables 01–07, Figs 01–03 |
 | `04_residual_plots.R` | Results: Descriptive Evidence | Residualized trend plots by pool/state/product | Figs 04–07 |
 | `05_regressions.R` | Empirical Model; Results: Retail Prices; Markups | Price and margin level regressions | Tables 08–11, Figs 08–11 |
-| `06_passthrough.R` | Mechanisms: Mechanism 2 (Variation in Pass-Through) | Pass-through regressions + duration extension | Tables 12–14, Figs 12–13 |
-| `07_uniform_pricing.R` | Mechanisms: Mechanism 1 (Constant Retail Prices) | Within-chain price uniformity | Tables 15–20, Figs 14–18 |
+| `06_uniform_pricing.R` | Mechanisms: Mechanism 1 (Constant Retail Prices) | Within-chain price uniformity | Tables 15–20, Figs 14–18 |
+| `07_passthrough.R` | Mechanisms: Mechanism 2 (Variation in Pass-Through) | Pass-through regressions + duration extension | Tables 12–14, Figs 12–13 |
 | `08_demand_rotation.R` | Mechanisms: Mechanism 3 (Countercyclical Pricing) | Promo intensity, price dispersion, IV pass-through | Tables 21–24, Figs 19–21 |
 
 ### Global flags (`run_all.R`)

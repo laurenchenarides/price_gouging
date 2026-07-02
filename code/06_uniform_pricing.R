@@ -1,5 +1,5 @@
 # ==============================================================================
-# 07_uniform_pricing.R
+# 06_uniform_pricing.R
 #
 # Mechanisms: Mechanism 1 (Constant Retail Prices / Uniform Pricing)
 #

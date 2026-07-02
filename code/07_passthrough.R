@@ -1,5 +1,5 @@
 # ==============================================================================
-# 06_passthrough.R
+# 07_passthrough.R
 #
 # Mechanisms: Mechanism 2 (Variation in Pass-Through)
 #
@@ -95,10 +95,10 @@ pt_coef_df <- bind_rows(
   filter(term %in% c("dW", "dW:SoE", "dW:postSoE")) %>%
   mutate(
     term = recode(term,
-                  "dW"         = "Baseline (Delta w)",
-                  "dW:SoE"     = "Delta w x SOE",
-                  "dW:postSoE" = "Delta w x postSOE"),
-    term = factor(term, levels = c("Baseline (Delta w)", "Delta w x SOE", "Delta w x postSOE")),
+                  "dW"         = "Baseline (Δ w)",
+                  "dW:SoE"     = "Δ w x SOE",
+                  "dW:postSoE" = "Δ w x postSOE"),
+    term = factor(term, levels = c("Baseline (Δ w)", "Δ w x SOE", "Δ w x postSOE")),
     spec = factor(spec, levels = c("No week FE", "With week FE"))
   )
 
@@ -114,6 +114,8 @@ g_pt_coef <- ggplot(pt_coef_df,
        color = NULL) +
   theme_bw() +
   theme(legend.position = "top")
+
+g_pt_coef
 
 ggsave("figures/12_fig_passthrough_coef.png", g_pt_coef,
        width = 9, height = 5, dpi = 300)
@@ -215,7 +217,7 @@ if (RUN_DUR_EXTENSION) {
       title    = "Implied SOE pass-through by enforcement duration",
       subtitle = "Dashed line = pre-SOE baseline. Points are linear combinations from the duration model (week FEs included).",
       x        = "Weeks since SOE activation",
-      y        = "Implied pass-through (Delta p / Delta w)"
+      y        = "Implied pass-through (Δ p / Δ w)"
     ) +
     theme_bw() +
     theme(plot.subtitle = element_text(size = 8))
@@ -225,5 +227,97 @@ if (RUN_DUR_EXTENSION) {
   message("Saved: figures/13_fig_passthrough_duration.png")
   
 }
+
+g_pt_dur
+
+
+# ==============================================================================
+# 11b. PASS-THROUGH IN LOGS (ROBUSTNESS -- Sangani 2026)
+# ==============================================================================
+# Sangani (QJE 2026) shows that pass-through measured in percentages (logs)
+# appears incomplete even when pass-through in levels is complete, because
+# a $1 increase in a $0.35 cost looks like a larger percentage change than
+# the same $1 increase in a $1.20 retail price. The log-pass-through
+# coefficient is therefore expected to be approximately equal to the
+# cost-to-price ratio (w_ist / p_ist) even under complete levels pass-through.
+# This specification estimates log pass-through for comparison and to confirm
+# that the attenuation during the SOE is not an artifact of nonlinear
+# inflationary pressure on wholesale costs.
+# ==============================================================================
+
+pt_data_log <- panel_est %>%
+  filter(is.finite(p_ist), is.finite(w_ist),
+         p_ist > 0, w_ist > 0) %>%
+  arrange(store_id, product, week_seq) %>%
+  group_by(store_id, product) %>%
+  mutate(
+    lag_p_ist = lag(p_ist),
+    lag_w_ist = lag(w_ist)
+  ) %>%
+  ungroup() %>%
+  filter(
+    !is.na(lag_p_ist), !is.na(lag_w_ist),
+    lag_p_ist > 0, lag_w_ist > 0
+  ) %>%
+  mutate(
+    dlogP = log(p_ist) - log(lag_p_ist),
+    dlogW = log(w_ist) - log(lag_w_ist)
+  ) %>%
+  filter(is.finite(dlogP), is.finite(dlogW))
+
+# Sanity check: implied log pass-through under complete levels pass-through
+# should be approximately mean(w_ist / p_ist)
+pt_data_log %>%
+  summarise(
+    mean_cost_price_ratio = mean(w_ist / p_ist, na.rm = TRUE),
+    median_cost_price_ratio = median(w_ist / p_ist, na.rm = TRUE)
+  )
+# If log pass-through baseline coefficient ≈ cost-to-price ratio,
+# the levels and log results are consistent with Sangani (2026).
+
+m_pt_log_no_fe <- feols(
+  dlogP ~ dlogW + dlogW:SoE + dlogW:postSoE | product + store_id,
+  data    = pt_data_log,
+  cluster = ~ store_id
+)
+
+m_pt_log_with_fe <- feols(
+  dlogP ~ dlogW + dlogW:SoE + dlogW:postSoE | product + store_id + week_fe,
+  data    = pt_data_log,
+  cluster = ~ store_id
+)
+
+etable(list(
+  "(1) No week FE"   = m_pt_log_no_fe,
+  "(2) With week FE" = m_pt_log_with_fe
+))
+
+etable(
+  list(
+    "(1) No week FE"   = m_pt_log_no_fe,
+    "(2) With week FE" = m_pt_log_with_fe
+  ),
+  tex    = TRUE,
+  file   = "tables_latex/12b_tab_passthrough_log.tex",
+  title  = "Pass-through regressions in logs (robustness)",
+  label  = "tab:passthrough_log",
+  digits = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2,
+  dict   = c(
+    "dlogW"         = "$\\Delta \\log w_{jist}$",
+    "dlogW:SoE"     = "$\\Delta \\log w_{jist} \\times SOE_{st}$",
+    "dlogW:postSoE" = "$\\Delta \\log w_{jist} \\times postSOE_{st}$"
+  ),
+  headers = list("Log pass-through: $\\Delta \\log p_{jist}$" = 2),
+  notes   = c(
+    "Dependent variable: $\\Delta \\log p_{jist}$ (log change in net retail price).",
+    "Regressor: $\\Delta \\log w_{jist}$ (log change in wholesale cost).",
+    "Fixed effects: product and store; column (2) adds week fixed effects.",
+    "Standard errors clustered at the store level.",
+    "Robustness check following Sangani (2026): under complete pass-through",
+    "in levels, the baseline log pass-through coefficient is expected to",
+    "approximate the mean wholesale-cost-to-retail-price ratio."
+  )
+)
+message("Saved: tables_latex/12b_tab_passthrough_log.tex")
 
 message("Pass-through regressions complete.")
