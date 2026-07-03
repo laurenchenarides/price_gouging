@@ -1,39 +1,45 @@
 
 \begin{table}[htbp]
-   \caption{\label{tab:uniformity_heterog_retail} Retailer heterogeneity in within-chain retail price uniformity}
+   \caption{\label{tab:uniformity_heterog_retail} Retailer heterogeneity in within-chain retail price uniformity (pair-status design)}
    \centering
    \begin{tabular}{lccc}
       \tabularnewline \midrule \midrule
-      Model:                          & (1)            & (2)          & (3)\\  
+      Model:                          & (1)            & (2)           & (3)\\  
       \midrule
       \emph{Variables}\\
-      during $\times$ retailer $=$ 2  & -0.010         & 0.003        & 0.003\\   
-                                      & (0.009)        & (0.012)      & (0.012)\\   
-      during $\times$ retailer $=$ 3  & -0.014$^{*}$   & -0.001       & -0.001\\   
-                                      & (0.008)        & (0.008)      & (0.008)\\   
-      during $\times$ retailer $=$ 5  & -0.027$^{***}$ & -0.014       & -0.014\\   
-                                      & (0.007)        & (0.009)      & (0.009)\\   
-      post $\times$ retailer $=$ 2    & -0.014$^{*}$   & -0.006       & -0.006\\   
-                                      & (0.008)        & (0.013)      & (0.013)\\   
-      post $\times$ retailer $=$ 3    & -0.001         & 0.006        & 0.005\\   
-                                      & (0.010)        & (0.013)      & (0.013)\\   
-      post $\times$ retailer $=$ 5    & -0.031$^{**}$  & -0.024$^{*}$ & -0.024$^{*}$\\   
-                                      & (0.013)        & (0.012)      & (0.012)\\   
+      during $\times$ retailer $=$ 2  & -0.010         & 0.002         & 0.002\\   
+                                      & (0.009)        & (0.012)       & (0.011)\\   
+      during $\times$ retailer $=$ 3  & -0.014$^{*}$   & -0.0008       & -0.0008\\   
+                                      & (0.008)        & (0.008)       & (0.008)\\   
+      during $\times$ retailer $=$ 5  & -0.027$^{***}$ & -0.014        & -0.014\\   
+                                      & (0.008)        & (0.009)       & (0.009)\\   
+      post $\times$ retailer $=$ 2    & -0.014$^{*}$   & -0.009        & -0.009\\   
+                                      & (0.008)        & (0.013)       & (0.014)\\   
+      post $\times$ retailer $=$ 3    & -0.001         & 0.003         & 0.003\\   
+                                      & (0.010)        & (0.013)       & (0.013)\\   
+      post $\times$ retailer $=$ 5    & -0.031$^{**}$  & -0.027$^{**}$ & -0.027$^{**}$\\   
+                                      & (0.013)        & (0.012)       & (0.012)\\   
+      mixed $\times$ retailer $=$ 2   & 0.020          & 0.034         & 0.034\\   
+                                      & (0.016)        & (0.020)       & (0.021)\\   
+      mixed $\times$ retailer $=$ 3   & -0.034$^{***}$ & -0.013        & -0.013\\   
+                                      & (0.008)        & (0.014)       & (0.014)\\   
       \midrule
       \emph{Fixed-effects}\\
-      product                         & Yes            &              & Yes\\  
-      month\_fe                       &                & Yes          & Yes\\  
+      product                         & Yes            &               & Yes\\  
+      month\_fe                       &                & Yes           & Yes\\  
       \midrule
       \emph{Fit statistics}\\
-      Observations                    & 4,467          & 4,467        & 4,467\\  
-      R$^2$                           & 0.06796        & 0.10326      & 0.11571\\  
+      Observations                    & 4,646          & 4,646         & 4,646\\  
+      R$^2$                           & 0.07322        & 0.11278       & 0.12293\\  
       \midrule \midrule
       \multicolumn{4}{l}{\emph{Clustered (retailer\_product) standard-errors in parentheses}}\\
       \multicolumn{4}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
    \end{tabular}
    
    \par \raggedright 
-   Each coefficient is a retailer-specific SOE or post-SOE deviation from the pre-SOE period.\\
+   Each coefficient is a retailer-specific deviation from that retailer's pre-SOE pairs.\\
+   ``mixed'' = cross-state pairs with one store under active enforcement and one post-enforcement;\\
+   only chains operating in more than one state can have mixed-status pairs.\\
    Standard errors clustered at the retailer-product level.
 \end{table}
 

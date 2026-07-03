@@ -355,14 +355,15 @@ display: none;
 <div id="code-directory-script-reference" class="section level1">
 <h1>Code Directory — Script Reference</h1>
 <p>This folder contains all R and SQL scripts for the analysis. Run
-everything via <code>run_all.R</code> from the project root. See the
-root <code>README.md</code> for the full output inventory and embedded
-figures.</p>
+everything via <code>run_all.R</code> from the project root (after the
+server-side SQL build). See the root <code>README.md</code> for the full
+output inventory.</p>
 <hr />
 <div id="execution-order" class="section level2">
 <h2>Execution Order</h2>
 <p>Scripts are sourced automatically by <code>run_all.R</code> in the
-order below.</p>
+order below. Connection details and global flags live in
+<code>config.R</code>.</p>
 <hr />
 <div id="data-construction" class="section level3">
 <h3>Data Construction</h3>
@@ -370,15 +371,17 @@ order below.</p>
 tables from SQL Server (DecaData, <code>stg</code> schema) and assembles
 <code>panel_upc_week</code> at the store-product-week level. Also pulls
 <code>dwi</code> (date index) and <code>store_info</code> (store
-metadata with lat/lon). Products: bananas (4011), cabbage (4069),
-cucumbers (4062), lettuce (7143001065), tomatoes (4087).</p>
+metadata with lat/lon; retailer 1 excluded, mirroring the SQL build).
+Products: bananas (4011), cabbage (4069), cucumbers (4062), lettuce
+(7143001065), tomatoes (4087).</p>
 <p><strong><code>01_price_sensitivity_diagnostic.R</code></strong>
 Compares three price measures — <code>p_ist_net</code>,
 <code>p_ist_gross</code>, <code>avg_unit_price</code> — and documents
 the promotional environment. Produces step charts (gross, net,
-wholesale) by product around SOE activation. The volume filter
-<code>upc_week_volume &gt;= 2</code> guards against near-zero-volume
-artifacts in <code>diag_08</code>.</p>
+wholesale) by product around SOE activation
+(<code>diag_08_price_step_by_product_with_cost.png</code> = paper Figure
+3). The volume filter <code>upc_week_volume &gt;= 2</code> guards
+against near-zero-volume artifacts in <code>diag_08</code>.</p>
 <p><strong><code>02_build_panel.R</code></strong> Sets
 <code>p_ist = p_ist_net</code> (primary price variable). Reads and
 rebases BLS CPI-U. Joins deflator; constructs <code>margin_nom</code>,
@@ -386,175 +389,127 @@ rebases BLS CPI-U. Joins deflator; constructs <code>margin_nom</code>,
 (<code>SoE</code>, <code>postSoE</code>, <code>preSoE</code>,
 <code>Dur_st</code>, <code>k_start</code>, <code>k_end</code>). Takes
 weekly first differences (<code>dP</code>, <code>dW</code>,
-<code>dM</code>). Trims top/bottom 1% of log price changes within
-product. Defines <code>save_tex()</code> helper used by all downstream
-table-writing scripts.</p>
+<code>dM</code>). Trims top/bottom 1% of weekly log changes within
+product. <strong>Note:</strong> the resulting <code>panel_est</code> is
+the shared estimation sample for ALL downstream scripts, including
+descriptives and level regressions (N = 604,121 in the current draft).
+Defines <code>save_tex()</code> used by all table-writing scripts.
+Output objects: <code>panel_levels</code>, <code>panel_est</code>.</p>
 <hr />
 </div>
-<div id="variable-construction-diagnostic" class="section level3">
-<h3>Variable Construction (diagnostic)</h3>
-<p><strong><code>01_price_sensitivity_diagnostic.R</code></strong>
-Compares three price measures — p_ist_net, p_ist_gross, avg_unit_price —
-and documents the promotional environment. Produces step charts (gross,
-net, wholesale) by product around SOE activation. The volume filter
-upc_week_volume &gt;= 2 guards against near-zero-volume artifacts in
-diag_08.</p>
-<hr />
-</div>
-<div id="variable-construction" class="section level3">
-<h3>Variable Construction</h3>
-<p><strong><code>02_build_panel.R</code></strong> Sets p_ist = p_ist_net
-(primary price variable). Reads and rebases BLS CPI-U. Joins deflator;
-constructs margin_nom, p_real, w_real. Builds SOE timing variables (SoE,
-postSoE, preSoE, Dur_st, k_start, k_end). Takes weekly first differences
-(dP, dW, dM). Trims top/bottom 1% of log price changes within product.
-Defines save_tex() helper used by all downstream table-writing
-scripts.</p>
-<p>Output objects: <code>panel_levels</code>, <code>panel_est</code></p>
-<hr />
-</div>
-<div id="results-descriptive-evidence" class="section level3">
-<h3>Results: Descriptive Evidence</h3>
-<p><strong><code>03_descriptive_tables.R</code></strong> → Tables 01–05,
-Figures 01–02</p>
+<div id="results-descriptive-evidence-incidence-of-price-gouging" class="section level3">
+<h3>Results: Descriptive Evidence &amp; Incidence of Price Gouging</h3>
+<p><strong><code>03_descriptive_tables.R</code></strong> → tables
+<code>00</code>–<code>07</code>, figures
+<code>01</code>–<code>03</code></p>
 <ul>
-<li><strong>Table 01</strong>
-(<code>01_tab_decadata_summary.tex</code>): Coverage by year (banners,
-stores, obs)</li>
-<li><strong>Table 02</strong>
-(<code>02_tab_decadata_summary_wide.tex</code>): Coverage by year ×
-retailer × state</li>
-<li><strong>Table 03</strong>
-(<code>03_tab_product_coverage.tex</code>): Coverage and average sales
-by product</li>
-<li><strong>Table 04</strong>
-(<code>04_tab_period_means_nominal.tex</code>): Period means — nominal
-price, cost, margin, volume by product</li>
-<li><strong>Table 05</strong>
-(<code>05_tab_period_means_real.tex</code>): Period means — real prices
-(supplementary)</li>
-<li><strong>Figure 01</strong>
-(<code>01_fig_volume_and_prices_dual_axis.png</code>): Weekly volume and
-prices (dual axis)</li>
-<li><strong>Figure 02</strong> (<code>02_fig_cost_weekly.png</code>):
-Mean wholesale cost over time</li>
+<li><code>00_tab_summary_stats.tex</code> — paper Table A.15</li>
+<li><code>01_tab_decadata_summary.tex</code> — paper Table 2 (coverage
+by year)</li>
+<li><code>02_tab_decadata_summary_wide.tex</code> — paper Table
+A.16</li>
+<li><code>03_tab_product_coverage.tex</code> — not currently in
+paper</li>
+<li><code>04_tab_period_means_nominal.tex</code> — paper Table 3</li>
+<li><code>05_tab_period_means_real.tex</code> — supplementary (not in
+paper)</li>
+<li><code>06_tab_flagged_weeks_all.tex</code> — paper Table 4</li>
+<li><code>07_tab_flagged_weeks_T25.tex</code> — paper Table 5</li>
+<li><code>01_fig_volume_and_prices_dual_axis.png</code> — paper Figure
+2</li>
+<li><code>02_fig_cost_weekly.png</code> — not currently in paper</li>
+<li><code>03_fig_flag_cluster_stacked.png</code> — paper Figure 4</li>
 </ul>
-</div>
-<div id="results-incidence-of-price-gouging" class="section level3">
-<h3>Results: Incidence of Price Gouging</h3>
-<p><strong><code>03_descriptive_tables.R</code></strong> → Tables 06–07,
-Figure 03</p>
-<ul>
-<li><strong>Table 06</strong>
-(<code>06_tab_flagged_weeks_all.tex</code>): APG flag rates across five
-thresholds</li>
-<li><strong>Table 07</strong>
-(<code>07_tab_flagged_weeks_T25.tex</code>): Flag rates at 25% threshold
-by product</li>
-<li><strong>Figure 03</strong>
-(<code>03_fig_flag_cluster_stacked.png</code>): Stacked bar of flag
-rates by retailer</li>
-</ul>
-<p><code>04_residual_plots.R</code> → Figures 04–07 (pooled); optional
-by-state and by-product</p>
-<p>Regresses each outcome on product + store FEs; plots weekly mean
-residuals. Outcomes: volume, price, cost, margin. By-group plots
-produced when <code>SAVE_OPTIONAL_PLOTS = TRUE</code>.</p>
+<p><strong><code>04_residual_plots.R</code></strong> →
+<code>04–07_fig_resid_*_pooled.png</code> (+ by-state/by-product when
+<code>SAVE_OPTIONAL_PLOTS = TRUE</code>). Not currently placed in the
+paper.</p>
 <hr />
 </div>
 <div id="empirical-model-price-and-margin-level-regressions" class="section level3">
 <h3>Empirical Model: Price and Margin Level Regressions</h3>
-<p><strong><code>05_regressions.R</code></strong> → Tables 08–11,
-Figures 08–11</p>
+<p><strong><code>05_regressions.R</code></strong> → tables
+<code>08</code>–<code>11</code> + <code>08b</code>, <code>10b</code>,
+<code>10c</code>, <code>10d</code>; figures
+<code>08</code>–<code>11</code></p>
 <p>Specification:
-<code>P_ist = α + β₁·SOE_st + β₂·postSOE_st + γ_j + δ_i + ε_ist</code></p>
-<p>Fixed effects: product and store. Standard errors clustered at the
-store level.</p>
+<code>P_ist = α + β₁·SOE_st + β₂·postSOE_st + γ_j + δ_i + ε_ist</code>.
+Fixed effects: product and store. <strong>Standard errors clustered at
+the state level (G = 5), complemented by wild cluster bootstrap with
+Webb weights (B = 9,999, seeded).</strong></p>
 <ul>
-<li><strong>Table 08</strong> (<code>08_tab_price_reg.tex</code>):
-Baseline price regressions</li>
-<li><strong>Table 09</strong>
-(<code>09_tab_price_reg_state_heterog.tex</code>): State-heterogeneous
-price effects</li>
-<li><strong>Table 10</strong> (<code>10_tab_margin_reg.tex</code>):
-Baseline margin regressions</li>
-<li><strong>Table 11</strong>
-(<code>11_tab_margin_reg_state_heterog.tex</code>): State-heterogeneous
-margin effects</li>
+<li><code>08_tab_price_reg.tex</code> — paper Table 6;
+<code>08b_tab_price_wcb.tex</code> — paper Table B.17</li>
+<li><code>09_tab_price_reg_state_heterog.tex</code> — paper Table 7</li>
+<li><code>10_tab_margin_reg.tex</code> — paper Table 8;
+<code>10b_tab_margin_wcb.tex</code> — paper Table B.18</li>
+<li><code>11_tab_margin_reg_state_heterog.tex</code> — paper Table
+9</li>
+<li><code>10c/10d_tab_cost_reg*.tex</code> — paper Tables C.19–C.20
+(accounting check)</li>
 </ul>
 <hr />
 </div>
 <div id="mechanism-1-constant-retail-prices" class="section level3">
 <h3>Mechanism 1: Constant Retail Prices</h3>
-<p><strong><code>07_uniform_pricing.R</code></strong> → Tables 15–20,
-Figures 14–18</p>
-<p>Outcome: mean absolute log price difference across store pairs within
-retailer-product-week. Tests whether within-chain price uniformity
-changed during and after the SOE.</p>
-<ul>
-<li><strong>Tables 15–16</strong>: Summary of retail and wholesale
-log-differences by period</li>
-<li><strong>Tables 17–18</strong>: Uniformity regressions (retail and
-wholesale)</li>
-<li><strong>Tables 19–20</strong>: Retailer heterogeneity in uniformity
-response</li>
-</ul>
+<p><strong><code>06_uniform_pricing.R</code></strong> → tables
+<code>15</code>, <code>16</code>, <code>17_main</code>,
+<code>17b</code>, <code>18_main</code>, <code>18b</code>,
+<code>19</code>, <code>20</code>; figures
+<code>14</code>–<code>18</code></p>
+<p>Outcome: mean absolute log price (cost) difference across store pairs
+within retailer-product-week. Main regressions = paper Tables 10–11
+(<code>17_tab_uniformity_retail_main.tex</code>,
+<code>18_tab_uniformity_wholesale_main.tex</code>); month-FE robustness
+= paper Tables D.23–D.24; summaries = D.21–D.22; retailer heterogeneity
+= D.25–D.26; figures 14–17 = paper Figures 9–12; figure 18 = paper
+Figure D.15.</p>
 <hr />
 </div>
 <div id="mechanism-2-variation-in-pass-through" class="section level3">
 <h3>Mechanism 2: Variation in Pass-Through</h3>
-<p><strong><code>06_passthrough.R</code></strong> → Tables 12–14,
-Figures 12–13</p>
-<p>Specification:
-<code>ΔP_ist = α + β₁·Δw + β₂·(Δw×SOE) + β₃·(Δw×postSOE) + γ_j + δ_i + τ_t</code></p>
-<p>Preferred specification includes week FEs. The identifying variation
-(<code>Δw × SOE</code>) varies across stores within a week and is not
-absorbed by week FEs.</p>
+<p><strong><code>07_passthrough.R</code></strong> → tables
+<code>12</code>, <code>12b</code>, <code>13</code>, <code>14</code>,
+<code>24</code>; figures <code>12</code>–<code>13</code></p>
 <ul>
-<li><strong>Table 12</strong> (<code>12_tab_passthrough_reg.tex</code>):
-Pass-through with and without week FEs</li>
-<li><strong>Table 13</strong>
-(<code>13_tab_passthrough_duration.tex</code>): Duration extension
-(<code>dW × SOE × Dur_wk</code>)</li>
-<li><strong>Table 14</strong>
-(<code>14_tab_passthrough_implied_soe.tex</code>): Implied SOE
-pass-through at selected enforcement durations</li>
-<li><strong>Figure 12</strong>
-(<code>12_fig_passthrough_coef.png</code>): Coefficient estimates, both
-specs</li>
-<li><strong>Figure 13</strong>
-(<code>13_fig_passthrough_duration.png</code>): Implied pass-through by
-weeks since SOE</li>
+<li><code>12_tab_passthrough_reg.tex</code> — paper Table 12
+(store-clustered SEs)</li>
+<li><code>13/14_...</code> — paper Tables 13–14 (duration extension;
+runs when <code>RUN_DUR_EXTENSION = TRUE</code>)</li>
+<li><code>12b_tab_passthrough_log.tex</code> — paper Table E.27 (Sangani
+levels-vs-logs check)</li>
+<li><code>24_tab_iv_passthrough.tex</code> — paper Table E.28 (IV; runs
+when <code>RUN_IV = TRUE</code>; note this lives HERE, not in script
+08)</li>
+<li>figures 12–13 = paper Figures 13–14</li>
 </ul>
-<p>Duration extension runs when <code>RUN_DUR_EXTENSION = TRUE</code>
-(default).</p>
 <hr />
 </div>
 <div id="mechanism-3-countercyclical-promotional-pricing" class="section level3">
 <h3>Mechanism 3: Countercyclical Promotional Pricing</h3>
-<p><strong><code>08_demand_rotation.R</code></strong> → Tables 21–24,
-Figures 19–21</p>
-<p>Tests the Butters (2025) demand rotation hypothesis: retailers use
-promotional discounts to price discriminate between price-elastic and
-inelastic consumers. APG laws constrain the posted price; retailers may
-adjust deal frequency or depth as a substitute margin channel.</p>
-<p>Requires <code>stg.pd_store_upc_week</code> in SQL (run
+<p><strong><code>08_demand_rotation.R</code></strong> → tables
+<code>21</code>, <code>22</code>, <code>23</code>, <code>25</code>,
+<code>26</code>; figures <code>19</code>–<code>20</code> (paper §5.3.1 —
+results section not yet written)</p>
+<p>Requires <code>stg.pd_store_upc_week</code> (run
 <code>BuildMarkupsNew_PriceDiscrimination.sql</code> first). Falls back
-to <code>panel_est</code>-level <code>share_on_sale</code> if
-unavailable.</p>
+to <code>panel_est</code> <code>share_on_sale</code> if unavailable.</p>
 <ul>
-<li><strong>M3a</strong> (<code>21_tab_gross_net_gap.tex</code>,
-<code>19_fig_gross_net_gap.png</code>): Did the promotional discount per
-unit widen during the SOE?</li>
-<li><strong>M3b</strong> (<code>22_tab_promo_intensity.tex</code>,
-<code>20_fig_promo_intensity.png</code>): Did <code>share_on_sale</code>
-and discount depth change?</li>
-<li><strong>M3c</strong> (<code>23_tab_price_dispersion.tex</code>,
-<code>21_fig_price_dispersion.png</code>): Did within-store-day price
-dispersion change?</li>
-<li><strong>M3e</strong> (<code>24_tab_iv_passthrough.tex</code>): IV
-pass-through using inverse-distance-weighted cross-market costs
-(<code>Z_ist</code>) from store lat/lon.</li>
+<li><strong>M3a</strong> <code>21_tab_gross_net_gap.tex</code>,
+<code>19_fig_gross_net_gap.png</code> — gross–net gap during SOE</li>
+<li><strong>M3b</strong> <code>22_tab_promo_intensity.tex</code>,
+<code>20_fig_promo_intensity.png</code> — share on sale, discount
+depth</li>
+<li><strong>M3c</strong> <code>23_tab_gross_price_stability.tex</code> —
+gross (shelf) price stability. NOTE: the transaction data show no
+intra-day price dispersion (<code>both_types_present = 0</code>
+everywhere), so the earlier within-store dispersion test was replaced by
+this gross-price-stability test. Requires a <code>p_gross_weekly</code>
+column in <code>stg.pd_store_upc_week</code> — see audit item C2.</li>
+<li><strong>M3d</strong> <code>25_tab_demand_firststage.tex</code>,
+<code>26_tab_demand_cf.tex</code> — control-function demand rotation
+(distance-weighted price IV; bootstrap gated by
+<code>RUN_CF_BOOTSTRAP</code>).</li>
 </ul>
 <hr />
 </div>
@@ -575,28 +530,32 @@ pass-through using inverse-distance-weighted cross-market costs
 <tbody>
 <tr class="odd">
 <td><code>BuildMarkupsNew_2026_04.sql</code></td>
-<td>Builds <code>stg.store_upc_week</code> and <code>stg.pos_*</code>
-product tables. Run before R scripts.</td>
+<td>Builds <code>stg.store_upc_week</code> and the five
+<code>stg.pos_*</code> product tables, plus
+<code>stg.date_week_index</code>, <code>stg.pos_store_master</code>,
+<code>stg.store_dim</code>. Run FIRST. Assumes raw server objects
+<code>dbo.tempPOS_retailer_2_5</code>, <code>stg.pd</code>,
+<code>stg.category_key</code>, <code>stg.date_key</code>, and store
+metadata tables exist.</td>
 </tr>
 <tr class="even">
-<td><code>BuildMarkupsNew_Consumer_Tables.sql</code></td>
-<td>Diagnostic queries: distinct shoppers, shopping frequency by period,
-sale/regular coexistence within store-UPC-date.</td>
-</tr>
-<tr class="odd">
 <td><code>BuildMarkupsNew_PriceDiscrimination.sql</code></td>
 <td>Builds <code>stg.pd_store_upc_day</code> and
-<code>stg.pd_store_upc_week</code> for Mechanism 3. Uses
-<code>REWARD_CARD_NUMBER</code> as shopper ID.</td>
+<code>stg.pd_store_upc_week</code> for Mechanism 3. Run SECOND.</td>
 </tr>
 </tbody>
 </table>
+<p>Archived: <code>_archive/BuildMarkupsNew_Consumer_Tables.sql</code>
+(shopper diagnostics).</p>
 <hr />
 </div>
 <div id="optional-standalone-scripts" class="section level2">
 <h2>Optional Standalone Scripts</h2>
-<p>Not called by <code>run_all.R</code>; require <code>panel_est</code>
-in memory:</p>
+<p>Not called by <code>run_all.R</code>. <strong>These depend on objects
+from the deprecated <code>apg_analysis.R</code> pipeline</strong>
+(<code>panel_est_trim</code>, <code>store_upc_week</code>,
+<code>cpi_rebased</code>) and will not run against the current pipeline
+without porting:</p>
 <table>
 <colgroup>
 <col width="47%" />
@@ -610,17 +569,9 @@ in memory:</p>
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>01b_whisker_plots_logs_vs_levels.R</code></td>
-<td>Whisker plots: log vs level pass-through across event time</td>
-</tr>
-<tr class="even">
-<td><code>01c_COMPARE_all_df_select_df.R</code></td>
-<td>Fixed-weight price indices: all perishables vs five selected
-UPCs</td>
-</tr>
-<tr class="odd">
 <td><code>cpi/cpi_rebase.R</code></td>
-<td>CPI diagnostic: YoY inflation and deflator series</td>
+<td>CPI diagnostic: YoY inflation and deflator series (works
+standalone)</td>
 </tr>
 </tbody>
 </table>

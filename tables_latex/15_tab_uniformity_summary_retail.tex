@@ -1,23 +1,27 @@
 \begin{table}[!h]
 \centering
-\caption{\label{tab:tab:uniformity_summary_retail}Within-chain retail price uniformity by retailer and SOE period. Values are absolute log retail price differences across store pairs within the same chain, product, and week.}
+\caption{\label{tab:uniformity_summary_retail}Within-chain retail price uniformity by retailer and pair enforcement status. Values are absolute log retail price differences across store pairs within the same chain, product, and week. Pair status reflects the enforcement state of both stores; ``Mixed status'' pairs have one store under active enforcement and one post-enforcement (necessarily cross-state).}
 \centering
 \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{
 \begin{tabular}[t]{llrrrrrr}
 \toprule
-retailer & period & Count & Mean & Median & Std. dev. & Variance & Max\\
+retailer & Pair status & Count & Mean & Median & Std. dev. & Variance & Max\\
 \midrule
  & Pre-SOE & 38,114,169 & 0.0440 & 0.0006 & 0.0859 & 0.0074 & 1.0767\\
 
  & During SOE & 20,731,307 & 0.0392 & 0.0093 & 0.0739 & 0.0055 & 0.9709\\
 
-\multirow[t]{-3}{*}{\raggedright\arraybackslash Retailer 2} & Post-SOE & 33,951,188 & 0.0365 & 0.0086 & 0.0661 & 0.0044 & 1.2253\\
+ & Post-SOE & 33,951,188 & 0.0365 & 0.0086 & 0.0661 & 0.0044 & 1.2253\\
+
+\multirow[t]{-4}{*}{\raggedright\arraybackslash Retailer 2} & Mixed status & 1,003,393 & 0.0589 & 0.0253 & 0.0861 & 0.0074 & 0.7589\\
 \cmidrule{1-8}
  & Pre-SOE & 592,936 & 0.0426 & 0.0061 & 0.0792 & 0.0063 & 0.8081\\
 
  & During SOE & 231,526 & 0.0352 & 0.0100 & 0.0705 & 0.0050 & 0.8092\\
 
-\multirow[t]{-3}{*}{\raggedright\arraybackslash Retailer 3} & Post-SOE & 156,173 & 0.0447 & 0.0128 & 0.0840 & 0.0070 & 1.1155\\
+ & Post-SOE & 156,173 & 0.0447 & 0.0128 & 0.0840 & 0.0070 & 1.1155\\
+
+\multirow[t]{-4}{*}{\raggedright\arraybackslash Retailer 3} & Mixed status & 845 & 0.0172 & 0.0019 & 0.0295 & 0.0009 & 0.1567\\
 \cmidrule{1-8}
  & Pre-SOE & 187,707 & 0.0614 & 0.0007 & 0.1804 & 0.0325 & 1.4182\\
 

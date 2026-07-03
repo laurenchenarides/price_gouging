@@ -1,31 +1,38 @@
 
 \begin{table}[htbp]
-   \caption{\label{tab:uniformity_wholesale_main} Within-chain wholesale cost uniformity: main results}
+   \caption{\label{tab:uniformity_wholesale_main} Within-chain wholesale cost uniformity: main results (pair-status design)}
    \centering
    \begin{tabular}{lccc}
       \tabularnewline \midrule \midrule
-      Model:       & (1)           & (2)           & (3)\\  
+      Model:                              & (1)           & (2)           & (3)\\  
       \midrule
       \emph{Variables}\\
-      During SOE   & -0.011$^{**}$ & -0.010$^{**}$ & -0.011$^{**}$\\   
-                   & (0.005)       & (0.005)       & (0.005)\\   
-      Post-SOE     & -0.010        & -0.010        & -0.010\\   
-                   & (0.006)       & (0.006)       & (0.006)\\   
+      During SOE (both stores)            & -0.011$^{**}$ & -0.010$^{**}$ & -0.011$^{**}$\\   
+                                          & (0.005)       & (0.005)       & (0.005)\\   
+      Post-SOE (both stores)              & -0.010        & -0.010        & -0.010\\   
+                                          & (0.006)       & (0.006)       & (0.006)\\   
+      Mixed status (one during, one post) & 0.001         & 0.010         & 0.001\\   
+                                          & (0.005)       & (0.006)       & (0.005)\\   
       \midrule
       \emph{Fixed-effects}\\
-      retailer     & Yes           &               & Yes\\  
-      product      &               & Yes           & Yes\\  
+      retailer                            & Yes           &               & Yes\\  
+      product                             &               & Yes           & Yes\\  
       \midrule
       \emph{Fit statistics}\\
-      Observations & 4,467         & 4,467         & 4,467\\  
-      R$^2$        & 0.05826       & 0.16059       & 0.19999\\  
+      Observations                        & 4,646         & 4,646         & 4,646\\  
+      R$^2$                               & 0.06375       & 0.16672       & 0.20481\\  
       \midrule \midrule
       \multicolumn{4}{l}{\emph{Clustered (retailer\_product) standard-errors in parentheses}}\\
       \multicolumn{4}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
    \end{tabular}
    
    \par \raggedright 
-   Omitted category: pre-SOE period.\\
+   Unit of observation: retailer-product-week-pair-status cell.\\
+   Omitted category: pairs with both stores pre-SOE.\\
+   ``Mixed status'' cells contain cross-state store pairs with one store under\\
+   active enforcement and one post-enforcement; these identify whether chains\\
+   broke uniform pricing across enforcement borders.\\
+   Cells unweighted (set UNIF\_WEIGHT\_BY\_PAIRS = TRUE for pair-count weights).\\
    Standard errors clustered at the retailer-product level.
 \end{table}
 

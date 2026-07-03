@@ -1,0 +1,43 @@
+
+\begin{table}[htbp]
+   \caption{\label{tab:uniformity_retail_crossstate} Within-chain retail price uniformity: mixed-status effect net of cross-state geography}
+   \centering
+   \begin{tabular}{lccc}
+      \tabularnewline \midrule \midrule
+      Model:                              & (1)          & (2)           & (3)\\  
+      \midrule
+      \emph{Variables}\\
+      During SOE (both stores)            & -0.012$^{*}$ & -0.012$^{*}$  & -0.003\\   
+                                          & (0.006)      & (0.006)       & (0.008)\\   
+      Post-SOE (both stores)              & -0.011       & -0.010        & -0.012\\   
+                                          & (0.007)      & (0.007)       & (0.009)\\   
+      Mixed status (one during, one post) & 0.019        & 0.012         & 0.020\\   
+                                          & (0.014)      & (0.014)       & (0.017)\\   
+      Cross-state pair (geography)        &              & 0.014$^{***}$ & 0.014$^{***}$\\   
+                                          &              & (0.004)       & (0.004)\\   
+      \midrule
+      \emph{Fixed-effects}\\
+      retailer                            & Yes          & Yes           & Yes\\  
+      product                             & Yes          & Yes           & Yes\\  
+      month\_fe                           &              &               & Yes\\  
+      \midrule
+      \emph{Fit statistics}\\
+      Observations                        & 7,514        & 7,514         & 7,514\\  
+      R$^2$                               & 0.04561      & 0.06047       & 0.09634\\  
+      \midrule \midrule
+      \multicolumn{4}{l}{\emph{Clustered (retailer\_product) standard-errors in parentheses}}\\
+      \multicolumn{4}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+   \end{tabular}
+   
+   \par \raggedright 
+   Unit of observation: retailer-product-week-pair-status-crossstate cell (finer\\
+   than Tables 17/18; point estimates therefore differ slightly).\\
+   Column (1) omits the cross-state control; columns (2)-(3) add it.\\
+   ``Cross-state pair'' = the two stores are in different states (geography).\\
+   ``Mixed status'' pairs are always cross-state, so the mixed coefficient in\\
+   columns (2)-(3) is the enforcement-border effect NET of geography.\\
+   Omitted category: within-state pairs with both stores pre-SOE.\\
+   Standard errors clustered at the retailer-product level.
+\end{table}
+
+

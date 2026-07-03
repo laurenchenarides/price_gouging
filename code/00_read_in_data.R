@@ -9,8 +9,9 @@
 #
 # Products pulled: bananas, cabbage, cucumbers, lettuce, tomatoes
 #
-# This script is run once. The output panel is used by 01_deflate_and_construct.R.
-# SQL connection details are omitted for privacy; supply odbc driver string below.
+# This script is run once per session. The output panel (panel_upc_week) is
+# used by 01_price_sensitivity_diagnostic.R and 02_build_panel.R.
+# Connection details are user-specific and live in code/config.R.
 # ==============================================================================
 
 library(DBI)
@@ -23,13 +24,7 @@ library(lubridate)
 # Open connection
 message("Opening connection...")
 
-con <- dbConnect(
-  odbc::odbc(),
-  Driver   = "SQL Server",         # or "ODBC Driver 17 for SQL Server" etc.
-  Server   = "Orchard",            # e.g. "localhost" or "myserver\\SQLEXPRESS"
-  Database = "DecaData",           # or whatever your DB is called
-  Trusted_Connection = "Yes"       # or UID/PWD if you're using SQL auth
-)
+con <- open_decadata_connection()   # server/database set in code/config.R
 
 # Map product names to stg table names
 tbl_map <- c(

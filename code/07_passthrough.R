@@ -146,15 +146,14 @@ message("Saved: figures/12_fig_passthrough_coef.png")
 # with a rotation in demand elasticity.
 # ==============================================================================
 
-message("Building distance-weighted IV ...")
-
-store_info <- store_info %>%
-  rename(latitude = lat, longitude = lon)
-
-if (!all(c("latitude", "longitude") %in% names(store_info))) {
-  warning("store_info missing latitude/longitude. Check stg.pos_store_master column names.")
-  message("Skipping IV pass-through (M3d). Run with lat/lon columns available.")
-} else {
+if (RUN_IV && all(c("lat", "lon") %in% names(store_info))) {
+  
+  message("Building distance-weighted IV ...")
+  
+  # check column existence BEFORE renaming: rename() on a missing column errors.
+  store_info <- store_info %>%
+    rename(latitude = lat, longitude = lon)
+  
   
   pt_iv_data <- panel_est %>%
     filter(is.finite(dP), is.finite(dW)) %>%
@@ -222,7 +221,7 @@ if (!all(c("latitude", "longitude") %in% names(store_info))) {
     list("(1) OLS" = m_ols_iv_sample, "(2) IV" = m_iv),
     tex    = TRUE,
     file   = "tables_latex/24_tab_iv_passthrough.tex",
-    title  = "Pass-through: OLS vs IV (demand rotation instrument)",
+    title  = "Pass-through: OLS vs IV",
     label  = "tab:iv_passthrough",
     digits = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2 + ivf,
     dict   = c(
@@ -244,6 +243,10 @@ if (!all(c("latitude", "longitude") %in% names(store_info))) {
   )
   message("Saved: tables_latex/24_tab_iv_passthrough.tex")
   
+} else if (!RUN_IV) {
+  message("RUN_IV = FALSE: skipping IV pass-through.")
+} else {
+  warning("store_info missing lat/lon. Skipping IV pass-through.")
 }
 
 # ==============================================================================
@@ -350,9 +353,9 @@ if (RUN_DUR_EXTENSION) {
          width = 8, height = 5, dpi = 300)
   message("Saved: figures/13_fig_passthrough_duration.png")
   
+  g_pt_dur
+  
 }
-
-g_pt_dur
 
 
 # ==============================================================================

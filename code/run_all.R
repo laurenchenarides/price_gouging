@@ -1,12 +1,19 @@
 # ==============================================================================
 # run_all.R
 #
-# Food Retailer Pricing Behavior Under Anti-Price Gouging Laws: Evidence from Wholesale and Retail Scanner Data
+# Food Retailer Pricing Behavior Under Anti-Price Gouging Laws: Evidence from
+# Wholesale and Retail Scanner Data
 # Chenarides, Richards, and Dong
 #
 # Master script. Source this file to reproduce all tables and figures.
 # Open pg_project.Rproj in RStudio before running — it sets the working
 # directory to the project root automatically.
+#
+# Prerequisites:
+#   1. Server-side SQL build completed (code/BuildMarkupsNew_2026_04.sql,
+#      then code/BuildMarkupsNew_PriceDiscrimination.sql).
+#   2. cpi/cpi_20152025.xlsx present (BLS CPI-U, 1982-84 = 100).
+#   3. Connection details set in code/config.R and global vars.
 #
 # Script execution order:
 #   00_read_in_data.R                  SQL pull and panel assembly
@@ -29,7 +36,8 @@ pacman::p_load(
   ggplot2, scales,
   fixest, broom,
   knitr, kableExtra,
-  readxl, rlang, ggpattern, remotes
+  readxl, rlang, ggpattern, remotes,
+  fwildclusterboot, dqrng, tibble
 )
 
 options(dplyr.summarise.inform = FALSE)
@@ -39,21 +47,8 @@ for (d in c("figures", "tables_csv", "tables_latex", "tables_latex/net_price", "
   dir.create(d, showWarnings = FALSE, recursive = TRUE)
 }
 
-# ---- Global flags ------------------------------------------------------------
-
-# Set TRUE to also produce by-state and by-product residual trend plots
-# Useful for appendix or seminar materials.
-SAVE_OPTIONAL_PLOTS <- TRUE
-
-# Retailers to include (retailer 4 excluded: closed mid-sample)
-RETAILERS_KEEP <- c(2, 3, 5)
-
-# Set TRUE to run the pass-through duration extension (Section 11a)
-RUN_DUR_EXTENSION <- TRUE
-
-# Set TRUE to also write intermediate CSV files alongside LaTeX tables.
-# LaTeX output is always produced. CSV files are optional.
-SAVE_CSV <- FALSE
+# ---- Configuration and global flags (edit code/config.R, not this file) ------
+source("code/config.R")
 
 # ---- Run all scripts ---------------------------------------------------------
 
@@ -63,9 +58,9 @@ source("code/02_build_panel.R")
 source("code/03_descriptive_tables.R")
 source("code/04_residual_plots.R")
 source("code/05_regressions.R")
+
 source("code/06_uniform_pricing.R")
 source("code/07_passthrough.R")
-
 source("code/08_demand_rotation.R")
 
 message("=== Analysis complete. ===")

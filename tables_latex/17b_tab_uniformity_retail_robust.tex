@@ -4,22 +4,24 @@
    \centering
    \begin{tabular}{lccc}
       \tabularnewline \midrule \midrule
-      Model:       & (1)     & (2)     & (3)\\  
+      Model:                              & (1)     & (2)     & (3)\\  
       \midrule
       \emph{Variables}\\
-      During SOE   & -0.004  & -0.004  & -0.004\\   
-                   & (0.008) & (0.008) & (0.008)\\   
-      Post-SOE     & -0.011  & -0.011  & -0.011\\   
-                   & (0.011) & (0.010) & (0.011)\\   
+      During SOE (both stores)            & -0.004  & -0.004  & -0.004\\   
+                                          & (0.008) & (0.008) & (0.008)\\   
+      Post-SOE (both stores)              & -0.013  & -0.014  & -0.013\\   
+                                          & (0.010) & (0.010) & (0.010)\\   
+      Mixed status (one during, one post) & 0.030   & 0.030   & 0.030\\   
+                                          & (0.019) & (0.019) & (0.019)\\   
       \midrule
       \emph{Fixed-effects}\\
-      retailer     & Yes     &         & Yes\\  
-      month\_fe    & Yes     & Yes     & Yes\\  
-      product      &         & Yes     & Yes\\  
+      retailer                            & Yes     &         & Yes\\  
+      month\_fe                           & Yes     & Yes     & Yes\\  
+      product                             &         & Yes     & Yes\\  
       \midrule
       \emph{Fit statistics}\\
-      Observations & 4,467   & 4,467   & 4,467\\  
-      R$^2$        & 0.07699 & 0.08659 & 0.08951\\  
+      Observations                        & 4,646   & 4,646   & 4,646\\  
+      R$^2$                               & 0.08840 & 0.09611 & 0.09863\\  
       \midrule \midrule
       \multicolumn{4}{l}{\emph{Clustered (retailer\_product) standard-errors in parentheses}}\\
       \multicolumn{4}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
@@ -27,7 +29,12 @@
    
    \par \raggedright 
    Robustness checks add month fixed effects to each specification.\\
-   Omitted category: pre-SOE period.\\
+   Unit of observation: retailer-product-week-pair-status cell.\\
+   Omitted category: pairs with both stores pre-SOE.\\
+   ``Mixed status'' cells contain cross-state store pairs with one store under\\
+   active enforcement and one post-enforcement; these identify whether chains\\
+   broke uniform pricing across enforcement borders.\\
+   Cells unweighted (set UNIF\_WEIGHT\_BY\_PAIRS = TRUE for pair-count weights).\\
    Standard errors clustered at the retailer-product level.
 \end{table}
 

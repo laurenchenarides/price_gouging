@@ -1,23 +1,27 @@
 \begin{table}[!h]
 \centering
-\caption{\label{tab:tab:uniformity_summary_wholesale}Within-chain wholesale cost uniformity by retailer and SOE period. Values are absolute log wholesale cost differences across store pairs within the same chain, product, and week.}
+\caption{\label{tab:uniformity_summary_wholesale}Within-chain wholesale cost uniformity by retailer and pair enforcement status. Values are absolute log wholesale cost differences across store pairs within the same chain, product, and week. Pair status reflects the enforcement state of both stores; ``Mixed status'' pairs have one store under active enforcement and one post-enforcement (necessarily cross-state).}
 \centering
 \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{
 \begin{tabular}[t]{llrrrrrr}
 \toprule
-retailer & period & Count & Mean & Median & Std. dev. & Variance & Max\\
+retailer & Pair status & Count & Mean & Median & Std. dev. & Variance & Max\\
 \midrule
  & Pre-SOE & 38,114,169 & 0.0396 & 0.0185 & 0.0606 & 0.0037 & 1.4154\\
 
  & During SOE & 20,731,307 & 0.0373 & 0.0153 & 0.0554 & 0.0031 & 1.0204\\
 
-\multirow[t]{-3}{*}{\raggedright\arraybackslash Retailer 2} & Post-SOE & 33,951,188 & 0.0399 & 0.0194 & 0.0515 & 0.0027 & 0.8474\\
+ & Post-SOE & 33,951,188 & 0.0399 & 0.0194 & 0.0515 & 0.0027 & 0.8474\\
+
+\multirow[t]{-4}{*}{\raggedright\arraybackslash Retailer 2} & Mixed status & 1,003,393 & 0.0489 & 0.0296 & 0.0629 & 0.0040 & 0.6345\\
 \cmidrule{1-8}
  & Pre-SOE & 592,936 & 0.0208 & 0.0013 & 0.0445 & 0.0020 & 0.6965\\
 
  & During SOE & 231,526 & 0.0190 & 0.0037 & 0.0399 & 0.0016 & 0.6812\\
 
-\multirow[t]{-3}{*}{\raggedright\arraybackslash Retailer 3} & Post-SOE & 156,173 & 0.0221 & 0.0054 & 0.0458 & 0.0021 & 0.5923\\
+ & Post-SOE & 156,173 & 0.0221 & 0.0054 & 0.0458 & 0.0021 & 0.5923\\
+
+\multirow[t]{-4}{*}{\raggedright\arraybackslash Retailer 3} & Mixed status & 845 & 0.0159 & 0.0103 & 0.0208 & 0.0004 & 0.1442\\
 \cmidrule{1-8}
  & Pre-SOE & 187,707 & 0.0406 & 0.0031 & 0.1024 & 0.0105 & 1.1553\\
 

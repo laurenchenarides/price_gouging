@@ -132,22 +132,6 @@ m_price_state_het <- feols(
   data = reg_data, cluster = ~ sst
 )
 
-etable(
-  list("(1)" = m_price_state_het),
-  tex     = TRUE,
-  file    = "tables_latex/09_tab_price_reg_state_heterog.tex",
-  title   = "State heterogeneity in SOE and post-SOE price effects (nominal retail price)",
-  label   = "tab:price_reg_state_heterog",
-  digits  = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2,
-  notes   = c(
-    "Dependent variable: nominal retail price $p_{ist}$.",
-    "Each coefficient is a state-specific SOE or post-SOE effect.",
-    "Fixed effects: product and store.",
-    "Standard errors clustered at the state level."
-  )
-)
-message("Saved: tables_latex/09_tab_price_reg_state_heterog.tex")
-
 # Custom interleaved coef/SE table for state heterogeneity
 build_state_interleaved <- function(model, during_col = "During SOE", post_col = "Post-SOE") {
   broom::tidy(model, conf.int = TRUE) %>%
@@ -353,22 +337,6 @@ m_margin_state_het <- feols(
   margin_nom ~ 0 + i(sst, SoE) + i(sst, postSoE) | product + store_id,
   data = reg_data, cluster = ~ sst
 )
-
-etable(
-  list("(1)" = m_margin_state_het),
-  tex     = TRUE,
-  file    = "tables_latex/11_tab_margin_reg_state_heterog.tex",
-  title   = "State heterogeneity in SOE and post-SOE margin effects (nominal dollar margin)",
-  label   = "tab:margin_reg_state_heterog",
-  digits  = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2,
-  notes   = c(
-    "Dependent variable: nominal dollar margin $M_{ist}$.",
-    "Each coefficient is a state-specific SOE or post-SOE margin effect.",
-    "Fixed effects: product and store.",
-    "Standard errors clustered at the state level."
-  )
-)
-message("Saved: tables_latex/11_tab_margin_reg_state_heterog.tex")
 
 margin_state_interleaved <- build_state_interleaved(m_margin_state_het)
 

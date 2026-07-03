@@ -102,7 +102,7 @@ pct_chg_cost_nom_full   <- 100 * (soe_w_nom_last4   - pre_w_nom)  / pre_w_nom
 pct_chg_cost_real_onset <- 100 * (soe_w_real_first4 - pre_w_real) / pre_w_real
 pct_chg_cost_real_full  <- 100 * (soe_w_real_last4  - pre_w_real) / pre_w_real
 
-# -- Figure II.A: weekly volume with mean nominal and real prices (dual axis) --
+# -- Weekly volume with mean nominal and real prices (dual axis) --
 wk <- panel_est %>%
   group_by(week_start, week_seq) %>%
   summarise(
@@ -138,7 +138,7 @@ g_vol_price <- ggplot(wk, aes(x = week_start)) +
   labs(
     title    = "Weekly volume with mean prices (dual axis)",
     subtitle = paste0(
-      "Products: bananas, cabbage, cucumbers, lettuce, tomatoes. Retailer 4 excluded.\n",
+      "Products: bananas, cabbage, cucumbers, lettuce, tomatoes.\n",
       "Shaded = SOE period (", soe_start, " to ", soe_end, ").\n",
       sprintf("Pre to first 4 SOE weeks -- volume: %+.1f%%, nom. price: %+.1f%%, real price: %+.1f%%, nom. cost: %+.1f%%.",
               pct_chg_vol_onset, pct_chg_nom_onset, pct_chg_real_onset, pct_chg_cost_nom_onset)
@@ -152,7 +152,7 @@ ggsave("figures/01_fig_volume_and_prices_dual_axis.png", g_vol_price,
        width = 11, height = 5.5, dpi = 300)
 message("Saved: figures/01_fig_volume_and_prices_dual_axis.png")
 
-# -- Figure II.B: mean wholesale cost over time --
+# -- Mean wholesale cost over time --
 cost_weekly <- panel_est %>%
   group_by(week_start) %>%
   summarise(
@@ -187,7 +187,7 @@ ggsave("figures/02_fig_cost_weekly.png", g_cost_weekly,
        width = 11, height = 5.5, dpi = 300)
 message("Saved: figures/02_fig_cost_weekly.png")
 
-# -- Table II.B: DecaData coverage by year --
+# -- DecaData coverage by year --
 tab_decadata_raw <- panel_est %>%
   mutate(year = as.integer(format(week_start, "%Y"))) %>%
   group_by(year) %>%
@@ -210,15 +210,15 @@ if (SAVE_CSV) write.csv(tab_decadata_raw, "tables_csv/01_tab_decadata_summary.cs
 save_tex(
   kbl(tab_decadata_raw,
       format = "latex", booktabs = TRUE,
-      caption = "DecaData coverage by year. Five Southeastern states, five fresh produce items. Retailer 4 excluded (closed mid-sample).",
-      label   = "tab:decadata_summary",
+      caption = "DecaData coverage by year. Five Southeastern states, five fresh produce items.",
+      label   = "decadata_summary",
       align   = "lrrrr",
       format.args = list(big.mark = ",")) %>%
     kable_styling(latex_options = c("hold_position")),
   "01_tab_decadata_summary.tex"
 )
 
-# -- Table II.C: DecaData coverage by year, retailer, and state (wide) --
+# -- DecaData coverage by year, retailer, and state (wide) --
 tab_decadata_wide <- panel_est %>%
   mutate(year = as.integer(format(week_start, "%Y"))) %>%
   group_by(year, retailer_id, sst) %>%
@@ -239,14 +239,14 @@ save_tex(
       caption = paste0(
         "Store locations by year, retailer, and state. ",
         "The sample covers five Southeastern states and five fresh produce categories: ",
-        "bananas, cabbage, cucumbers, lettuce, and tomatoes. Retailer 4 excluded. ",
+        "bananas, cabbage, cucumbers, lettuce, and tomatoes. ",
         "Product selection required a UPC to pass coverage screens in at least 75\\% of stores, ",
         "where a store-level pass required at least 80\\% weekly presence in windows around ",
         "both APG activation and deactivation and at least five pre- and post-APG weeks observed. ",
         "Within each category, UPCs are ranked by total net sales; up to five per category are retained. ",
         "The final panel uses one UPC each for bananas, cabbage, cucumbers, lettuce, and tomatoes."
       ),
-      label = "tab:decadata_summary_wide",
+      label = "decadata_summary_wide",
       align = paste0("ll", strrep("r", n_states + 1)),
       format.args = list(big.mark = ",")) %>%
     collapse_rows(columns = 1, latex_hline = "major", valign = "top") %>%
@@ -255,7 +255,7 @@ save_tex(
   "02_tab_decadata_summary_wide.tex"
 )
 
-# -- Table II.D: Five-product coverage --
+# -- Five-product coverage --
 tab_product_raw <- panel_est %>%
   group_by(product) %>%
   summarise(
@@ -287,7 +287,7 @@ save_tex(
   kbl(tab_product_raw,
       format = "latex", booktabs = TRUE,
       caption = "Coverage and sales for the five fresh produce categories, 2018--2022. Coverage is the share of store-product-weeks with positive sales. Average price is in nominal dollars per unit or pound. Volume units: pounds (bananas, cabbage, cucumbers, tomatoes) and 8~oz bags (lettuce).",
-      label   = "tab:product_coverage",
+      label   = "product_coverage",
       align   = "lrrr",
       format.args = list(big.mark = ",")) %>%
     kable_styling(latex_options = c("hold_position")),
@@ -379,8 +379,8 @@ if (SAVE_CSV) write.csv(means_nom, "tables_csv/04_tab_period_means_nominal.csv",
 save_tex(
   make_period_table_kbl(
     means_nom,
-    caption_str  = "Average weekly volume, nominal retail price, nominal wholesale cost, and nominal dollar margin by product and SOE period. ``Total'' is summed volume across the full sample; ``All'' rows are pooled averages across all periods. Averages computed across store-product-weeks with positive sales, retailer 4 excluded. Volume units: pounds (bananas, cabbage, cucumbers, tomatoes) and 8~oz bags (lettuce).",
-    label_str    = "tab:period_means_nominal"
+    caption_str  = "Average weekly volume, nominal retail price, nominal wholesale cost, and nominal dollar margin by product and SOE period. ``Total'' is summed volume across the full sample; ``All'' rows are pooled averages across all periods. Averages computed across store-product-weeks with positive sales. Volume units: pounds (bananas, cabbage, cucumbers, tomatoes) and 8~oz bags (lettuce).",
+    label_str    = "period_means_nominal"
   ),
   "04_tab_period_means_nominal.tex"
 )
@@ -393,8 +393,8 @@ if (SAVE_CSV) write.csv(means_real, "tables_csv/05_tab_period_means_real.csv", r
 save_tex(
   make_period_table_kbl(
     means_real,
-    caption_str  = "Average weekly volume, real retail price, real wholesale cost, and real dollar margin by product and SOE period (January 2018 = 1.00 base). ``Total'' is summed volume across the full sample; ``All'' rows are pooled averages across all periods. Averages computed across store-product-weeks with positive sales, retailer 4 excluded. Volume units: pounds (bananas, cabbage, cucumbers, tomatoes) and 8~oz bags (lettuce).",
-    label_str    = "tab:period_means_real"
+    caption_str  = "Average weekly volume, real retail price, real wholesale cost, and real dollar margin by product and SOE period (January 2018 = 1.00 base). ``Total'' is summed volume across the full sample; ``All'' rows are pooled averages across all periods. Averages computed across store-product-weeks with positive sales. Volume units: pounds (bananas, cabbage, cucumbers, tomatoes) and 8~oz bags (lettuce).",
+    label_str    = "period_means_real"
   ),
   "05_tab_period_means_real.tex"
 )
@@ -404,7 +404,7 @@ save_tex(
 # 7. FLAGGED-WEEKS TABLE
 # ==============================================================================
 # A store-product-week is flagged if the nominal retail price during the SOE
-# exceeds the four-week pre-SOE average by more than threshold kappa.
+# exceeds the thirty-day pre-SOE average by more than threshold kappa.
 # Cost justification: dollar price increase does not exceed dollar cost increase.
 # ==============================================================================
 
@@ -413,10 +413,11 @@ message("Building flagged-weeks table ...")
 THRESHOLDS <- c(0.10, 0.15, 0.20, 0.25, 0.30)
 COST_MULT  <- 1.00
 
+# NOTE: the baseline window and Alabama's statute reference a THIRTY-day pre-SOE window.
 baseline_flag <- panel_est %>%
   filter(!is.na(apg_start_date)) %>%
   mutate(days_to_start = as.integer(apg_start_date - week_start)) %>%
-  filter(days_to_start > 0, days_to_start <= 28) %>%
+  filter(days_to_start > 0, days_to_start <= 30) %>%
   group_by(store_id, product) %>%
   summarise(
     p_base = mean(p_ist, na.rm = TRUE),
@@ -478,8 +479,8 @@ if (SAVE_CSV) write.csv(tab_flagged_all_raw, "tables_csv/06_tab_flagged_weeks_al
 save_tex(
   kbl(tab_flagged_all_raw,
       format = "latex", booktabs = TRUE,
-      caption = "Hypothetical flagged-weeks across thresholds. A store-product-week is flagged if the nominal retail price exceeds the four-week pre-SOE average by more than the listed threshold. Cost justification: dollar price increase does not exceed dollar cost increase (COST\\_MULT = 1.00). Pooled across all five products and retailers 2, 3, and 5.",
-      label   = "tab:flagged_weeks_all",
+      caption = "Hypothetical flagged-weeks across thresholds. A store-product-week is flagged if the nominal retail price exceeds the thirty-day pre-SOE average by more than the listed threshold. Cost justification: dollar price increase does not exceed dollar cost increase (COST\\_MULT = 1.00). Pooled across all five products and retailers 2, 3, and 5.",
+      label   = "flagged_weeks_all",
       align   = "lrrr",
       format.args = list(big.mark = ",")) %>%
     kable_styling(latex_options = c("hold_position")),
@@ -513,15 +514,15 @@ if (SAVE_CSV) write.csv(tab_flagged_T25_raw, "tables_csv/07_tab_flagged_weeks_T2
 save_tex(
   kbl(tab_flagged_T25_raw,
       format = "latex", booktabs = TRUE,
-      caption = "Hypothetical flagged-weeks at the 25\\% threshold (matches Alabama's statutory limit). A store-product-week is flagged if the nominal retail price exceeds the four-week pre-SOE average by more than 25\\%. Cost justification: dollar price increase does not exceed dollar cost increase. Pooled across retailers 2, 3, and 5.",
-      label   = "tab:flagged_weeks_T25",
+      caption = "Hypothetical flagged-weeks at the 25\\% threshold (matches Alabama's statutory limit). A store-product-week is flagged if the nominal retail price exceeds the thirty-day pre-SOE average by more than 25\\%. Cost justification: dollar price increase does not exceed dollar cost increase. Pooled across retailers 2, 3, and 5.",
+      label   = "flagged_weeks_T25",
       align   = "lrrr",
       format.args = list(big.mark = ",")) %>%
     kable_styling(latex_options = c("hold_position")),
   "07_tab_flagged_weeks_T25.tex"
 )
 
-# -- Figure III.B: Flagged weeks stacked bar by threshold and retailer --
+# -- Flagged weeks stacked bar by threshold and retailer --
 thresh_lbls_ordered <- paste0("T", as.integer(THRESHOLDS * 100))
 
 plot_df <- flag_long %>%
@@ -655,7 +656,7 @@ save_tex(
   kbl(sumstat_rows,
       format    = "latex", booktabs = TRUE, escape = FALSE,
       caption   = "Summary statistics: store--product--week panel",
-      label     = "tab:summary_stats",
+      label     = "summary_stats",
       align     = paste0("ll", strrep("r", 7)),
       col.names = c("Variable", "Description", "Mean", "Std.\\ Dev.",
                     "25th pctl", "Median", "75th pctl", "Min", "Max")) %>%
