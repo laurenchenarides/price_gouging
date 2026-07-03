@@ -49,9 +49,9 @@
 #        SOE? A near-zero SOE coefficient on p_gross_weekly, alongside a
 #        significant coefficient on share_on_sale, confirms that the net price
 #        decline was driven by promotion frequency rather than shelf price cuts.
-#   M3d. IV pass-through (demand rotation) -- instrument for Delta_w using
-#        distance-weighted cross-market wholesale prices (Z_ist) constructed
-#        from store lat/lon. Identifies how price sensitivity changed.
+#   M3d. 
+#        
+#        
 #
 # DATA INPUTS:
 #   panel_est            -- from 02_build_panel.R (store-product-week)
@@ -62,7 +62,6 @@
 #   21_tab_gross_net_gap.tex
 #   22_tab_promo_intensity.tex
 #   23_tab_gross_price_stability.tex
-#   24_tab_iv_passthrough.tex
 #
 # OUTPUTS (figures/):
 #   19_fig_gross_net_gap.png
@@ -414,127 +413,504 @@ if (!is.null(promo_panel)) {
   
 }
 
-
 # ==============================================================================
-# M3d. IV PASS-THROUGH: DEMAND ROTATION
+# M3d. CONTROL FUNCTION DEMAND ESTIMATION (DEMAND ROTATION)
 # ==============================================================================
-# Instrument: distance-weighted cross-market wholesale price (Z_ist).
-#   For each store i in state s, Z_ist is the inverse-distance-weighted average
-#   of dW_jt for the same product in all stores j outside state s. This
-#   instrument shifts the supply curve (cost) without directly affecting local
-#   demand conditions.
+# Tests whether the COVID-19 demand shock rotated the demand curve during the
+# SOE. Following Butters et al. (2025), we estimate a reduced-form demand
+# equation with SOE-period indicators and SOE-by-price interaction terms.
 #
-# Store lat/lon: available from stg.pos_store_master (store_info object,
-#   loaded in 00_read_in_data.R).
+# The key coefficient is eta_SOE: the interaction of demeaned log price with
+# the SOE indicator.
+#   - Positive eta_SOE: demand became less elastic during SOE (captive shopper
+#     story -- inelastic essential-goods buyers added produce to basket)
+#   - Negative eta_SOE: demand became more elastic during SOE (Butters et al.
+#     story -- occasional buyers entered the category)
 #
-# Specification:
-#   Stage 1: dW_ist = pi0 + pi1*Z_ist + pi2*(Z_ist*SoE) + gamma_i + tau_t
-#   Stage 2: dP_ist = alpha + beta1*dW_hat + beta2*(dW_hat*SoE) +
-#                     beta3*(dW_hat*postSoE) + gamma_i + delta_j + tau_t
+# ENDOGENEITY: price appears in three places on the RHS (demeaned log price,
+# its interaction with SOE, its interaction with postSOE). 2SLS is not
+# applicable when the endogenous variable appears as an interaction term.
+# We use a control function (CF) approach: run three first stages, save
+# residuals, include residuals as regressors in the second stage.
 #
-# The SOE interaction on the instrument (Z*SoE) tests whether pass-through
-# changed during the emergency period -- a shift in pass-through is consistent
-# with a rotation in demand elasticity.
+# INSTRUMENT: inverse-distance-weighted average log price of the same product
+# in stores outside state s during week t (Z_jist). Following Gandhi and
+# Houde (2019). Interacted with SOE and postSOE for the three interaction terms.
+#
+# STANDARD ERRORS: bootstrapped (200 replications, clustered at store level)
+# because second-stage regressors include generated variables (first-stage
+# residuals) and analytic SEs do not account for first-stage uncertainty.
+#
+# DATA: panel_est (store-product-week). Requires store lat/lon from store_info.
 # ==============================================================================
 
-message("Building distance-weighted IV ...")
+message("Estimating M3d: control function demand rotation ...")
 
-store_info <- store_info %>%
-  rename(latitude = lat, longitude = lon)
-  
+# ------------------------------------------------------------------------------
+# Step 0: check that store lat/lon is available
+# ------------------------------------------------------------------------------
+
 if (!all(c("latitude", "longitude") %in% names(store_info))) {
-  warning("store_info missing latitude/longitude. Check stg.pos_store_master column names.")
-  message("Skipping IV pass-through (M3d). Run with lat/lon columns available.")
+  warning("store_info missing latitude/longitude. Skipping M3d.")
 } else {
+  message("OK to continue with M3d.")
+}
   
-  pt_iv_data <- panel_est %>%
-    filter(is.finite(dP), is.finite(dW)) %>%
-    left_join(
-      store_info %>%
-        select(store_id, latitude, longitude) %>%
-        distinct() %>%
-        mutate(store_id = as.factor(store_id)),
-      by = "store_id"
-    ) %>%
-    filter(!is.na(latitude), !is.na(longitude))
-  
-  store_coords <- pt_iv_data %>%
-    select(store_id, latitude, longitude, sst) %>%
-    distinct()
-  
-  message("Computing cross-market IV (this may take a moment) ...")
-  
-  dw_store_week <- pt_iv_data %>%
-    select(store_id, product, week_seq, dW, sst, latitude, longitude) %>%
-    distinct()
-  
-  iv_raw <- dw_store_week %>%
-    rename(lat_i = latitude, lon_i = longitude, sst_i = sst) %>%
-    inner_join(
-      dw_store_week %>%
-        rename(store_j = store_id, dW_j = dW, sst_j = sst,
-               lat_j = latitude, lon_j = longitude),
-      by = c("product", "week_seq"),
-      relationship = "many-to-many"
-    ) %>%
-    filter(sst_i != sst_j) %>%
-    mutate(
-      dist_ij = sqrt((lat_i - lat_j)^2 + (lon_i - lon_j)^2),
-      weight  = 1 / pmax(dist_ij, 0.01)
-    ) %>%
-    group_by(store_id, product, week_seq) %>%
-    summarise(
-      Z_ist = weighted.mean(dW_j, w = weight, na.rm = TRUE),
-      .groups = "drop"
-    )
-  
-  pt_iv_data <- pt_iv_data %>%
-    left_join(iv_raw, by = c("store_id", "product", "week_seq")) %>%
-    filter(is.finite(Z_ist))
-  
-  message(sprintf("IV panel: %d obs, %d stores.", nrow(pt_iv_data), n_distinct(pt_iv_data$store_id)))
-  
-  m_iv <- feols(
-    dP ~ 1 | product + store_id + week_fe |
-      dW + dW:SoE + dW:postSoE ~ Z_ist + Z_ist:SoE + Z_ist:postSoE,
-    data    = pt_iv_data,
-    cluster = ~ sst
+# ----------------------------------------------------------------------------
+# Step 1: build the CF data frame with log price and log quantity
+# ----------------------------------------------------------------------------
+
+cf_data <- panel_est %>%
+  rename(vol = upc_week_volume) %>%
+  filter(
+    p_ist > 0, vol > 0,
+    is.finite(p_ist), is.finite(vol)
+  ) %>%
+  mutate(
+    lnQ = log(vol),
+    lnP = log(p_ist)
+  ) %>%
+  group_by(product) %>%
+  mutate(lnP_mean = mean(lnP, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(
+    lnP_dm      = lnP - lnP_mean,
+    lnP_dm_soe  = lnP_dm * SoE,
+    lnP_dm_post = lnP_dm * postSoE
+  ) %>%
+  left_join(
+    store_info %>%
+      select(store_id, latitude, longitude) %>%
+      distinct() %>%
+      mutate(store_id = as.factor(store_id)),
+    by = "store_id"
+  ) %>%
+  filter(!is.na(latitude), !is.na(longitude))
+
+message(sprintf("CF data: %d obs across %d stores and %d products.",
+                nrow(cf_data), n_distinct(cf_data$store_id),
+                n_distinct(cf_data$product)))
+
+# ----------------------------------------------------------------------------
+# Step 2: construct the distance-weighted cross-market log price instrument
+# ----------------------------------------------------------------------------
+# For each store i in state s, product j, week t:
+#   Z_jist = sum_{i' not in s} [d(i,i')^{-1} * lnP_{ji't}]
+#            / sum_{i' not in s} [d(i,i')^{-1}]
+# "Other market" = other states. Weights = inverse Euclidean distance.
+# ----------------------------------------------------------------------------
+
+message("Building distance-weighted log price instrument ...")
+
+store_lnP <- cf_data %>%
+  select(store_id, product, week_seq, lnP, sst, latitude, longitude) %>%
+  distinct()
+
+iv_cf_raw <- store_lnP %>%
+  rename(lat_i = latitude, lon_i = longitude, sst_i = sst) %>%
+  inner_join(
+    store_lnP %>%
+      rename(store_j = store_id, lnP_j = lnP, sst_j = sst,
+             lat_j = latitude, lon_j = longitude),
+    by           = c("product", "week_seq"),
+    relationship = "many-to-many"
+  ) %>%
+  filter(sst_i != sst_j) %>%
+  mutate(
+    dist_ij = sqrt((lat_i - lat_j)^2 + (lon_i - lon_j)^2),
+    weight  = 1 / pmax(dist_ij, 0.01)
+  ) %>%
+  group_by(store_id, product, week_seq) %>%
+  summarise(
+    Z_jist = weighted.mean(lnP_j, w = weight, na.rm = TRUE),
+    .groups = "drop"
   )
-  
-  m_ols_iv_sample <- feols(
-    dP ~ dW + dW:SoE + dW:postSoE | product + store_id + week_fe,
-    data    = pt_iv_data,
-    cluster = ~ sst
+
+cf_data <- cf_data %>%
+  left_join(iv_cf_raw, by = c("store_id", "product", "week_seq")) %>%
+  filter(is.finite(Z_jist)) %>%
+  mutate(
+    Z_soe  = Z_jist * SoE,
+    Z_post = Z_jist * postSoE
   )
-  
-  etable(list("(1) OLS" = m_ols_iv_sample, "(2) IV" = m_iv))
-  
-  etable(
-    list("(1) OLS" = m_ols_iv_sample, "(2) IV" = m_iv),
-    tex    = TRUE,
-    file   = "tables_latex/24_tab_iv_passthrough.tex",
-    title  = "Pass-through: OLS vs IV (demand rotation instrument)",
-    label  = "tab:iv_passthrough",
-    digits = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2 + ivf,
-    dict   = c(
-      "fit_dW"         = "$\\widehat{\\Delta w}_{ist}$",
-      "fit_dW:SoE"     = "$\\widehat{\\Delta w}_{ist} \\times SOE_{st}$",
-      "fit_dW:postSoE" = "$\\widehat{\\Delta w}_{ist} \\times postSOE_{st}$",
-      "dW"             = "$\\Delta w_{ist}$",
-      "dW:SoE"         = "$\\Delta w_{ist} \\times SOE_{st}$",
-      "dW:postSoE"     = "$\\Delta w_{ist} \\times postSOE_{st}$"
-    ),
-    headers = list("Pass-through: $\\Delta p_{ist}$" = 2),
-    notes = c(
-      "IV instrument: $Z_{ist}$ = inverse-distance-weighted mean $\\Delta w_{jt}$",
-      "across stores $j$ in other states, using store latitude and longitude.",
-      "Column (2) instruments $\\Delta w$, $\\Delta w \\times SOE$, and $\\Delta w \\times postSOE$",
-      "with $Z_{ist}$, $Z_{ist} \\times SOE$, and $Z_{ist} \\times postSOE$.",
-      "FEs: product, store, week. Standard errors clustered at the state level."
-    )
-  )
-  message("Saved: tables_latex/24_tab_iv_passthrough.tex")
-  
+
+message(sprintf("CF data after IV merge: %d obs.", nrow(cf_data)))
+
+# ----------------------------------------------------------------------------
+# Step 3: three first-stage regressions
+# ----------------------------------------------------------------------------
+
+message("Running three first-stage regressions ...")
+
+fs1 <- feols(
+  lnP_dm ~ Z_jist + Z_soe + Z_post + SoE + postSoE | product + store_id,
+  data = cf_data, cluster = ~ store_id
+)
+fs2 <- feols(
+  lnP_dm_soe ~ Z_jist + Z_soe + Z_post + SoE + postSoE | product + store_id,
+  data = cf_data, cluster = ~ store_id
+)
+fs3 <- feols(
+  lnP_dm_post ~ Z_jist + Z_soe + Z_post + SoE + postSoE | product + store_id,
+  data = cf_data, cluster = ~ store_id
+)
+
+etable(
+  list("FS1: lnP_dm" = fs1, "FS2: lnP_dm x SOE" = fs2,
+       "FS3: lnP_dm x postSOE" = fs3),
+  fitstat = ~ n + r2 + f
+)
+
+message("First stage F-statistics:")
+message(sprintf("  FS1 (lnP_dm):      F = %.1f", fitstat(fs1, ~ f)$f[1]))
+message(sprintf("  FS2 (lnP_dm*SOE):  F = %.1f", fitstat(fs2, ~ f)$f[1]))
+message(sprintf("  FS3 (lnP_dm*post): F = %.1f", fitstat(fs3, ~ f)$f[1]))
+
+# Stock-Yogo (2005) critical values: 1 endogenous variable, K = 3 excluded instruments.
+# Source: Stock & Yogo (2005), Table 1 (maximal size) and Table 2 (relative bias).
+# "Maximal size" = worst-case 5% Wald test size distortion <= threshold.
+# "Relative bias" = IV bias as share of OLS bias <= threshold.
+sy_k3 <- list(
+  maxsize_10pct = 22.30,  # 10% maximal size (most commonly cited)
+  maxsize_15pct = 15.09,
+  relbias_10pct = 12.83,  # 10% relative bias
+  relbias_05pct = 22.30   # 5% relative bias (same as 10% maxsize for K=3)
+)
+
+fs_stats <- c(
+  "FS1: lnP_dm"      = fitstat(fs1, ~ f)$f[1],
+  "FS2: lnP_dm*SOE"  = fitstat(fs2, ~ f)$f[1],
+  "FS3: lnP_dm*post" = fitstat(fs3, ~ f)$f[1]
+)
+
+message("\nFirst-stage F-statistics vs Stock-Yogo (2005) critical values (K=3 instruments):")
+message(sprintf("  %-22s  %6s  %6s  %6s  %6s",
+                "", "F-stat", "SY 10%", "SY 15%", "Bias10"))
+message(sprintf("  %-22s  %6s  %6s  %6s  %6s",
+                "", "      ", "maxsz", "maxsz", "relbias"))
+for (nm in names(fs_stats)) {
+  message(sprintf("  %-22s  %6.1f  %6.2f  %6.2f  %6.2f  %s",
+                  nm,
+                  fs_stats[nm],
+                  sy_k3$maxsize_10pct,
+                  sy_k3$maxsize_15pct,
+                  sy_k3$relbias_10pct,
+                  ifelse(fs_stats[nm] > sy_k3$maxsize_10pct, "PASS", "FAIL")))
 }
 
+cf_data <- cf_data %>%
+  mutate(
+    resid_fs1 = resid(fs1),
+    resid_fs2 = resid(fs2),
+    resid_fs3 = resid(fs3)
+  )
+
+etable(
+  list(
+    "(1) $\\ln p_{jist} - \\overline{\\ln p}_{j}$"               = fs1,
+    "(2) $(\\ln p_{jist} - \\overline{\\ln p}_{j}) \\times SOE$"  = fs2,
+    "(3) $(\\ln p_{jist} - \\overline{\\ln p}_{j}) \\times post$" = fs3
+  ),
+  tex     = TRUE,
+  file    = "tables_latex/25_tab_demand_firststage.tex",
+  title   = "First-stage regressions for control function demand estimation",
+  label   = "tab:demand_firststage",
+  digits  = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2 + f,
+  dict    = c(
+    "Z_jist" = "$Z_{jist}$",
+    "Z_soe"  = "$Z_{jist} \\times SOE_{st}$",
+    "Z_post" = "$Z_{jist} \\times postSOE_{st}$"
+  ),
+  notes = c(
+    "Dependent variables are the three endogenous terms in equation~\\ref{eq:demand_butters}.",
+    "Instrument: $Z_{jist}$ = inverse-distance-weighted average log net price of",
+    "the same product in stores outside state $s$ during week $t$.",
+    "Fixed effects: product and store. Standard errors clustered at the store level.",
+    "F-statistic tests joint significance of instruments in each first stage."
+  )
+)
+message("Saved: tables_latex/25_tab_demand_firststage.tex")
+
+# ----------------------------------------------------------------------------
+# Step 4: second stage (OLS on augmented demand equation)
+# ----------------------------------------------------------------------------
+# Residuals absorb the endogenous component of each price term.
+# Do not interpret analytic SEs -- use bootstrap SEs from Step 5.
+# ----------------------------------------------------------------------------
+
+message("Running second stage (control function) ...")
+
+m_demand_cf_ols <- feols(
+  lnQ ~ SoE + postSoE +
+    lnP_dm + lnP_dm_soe + lnP_dm_post +
+    resid_fs1 + resid_fs2 + resid_fs3 |
+    product + store_id,
+  data    = cf_data,
+  cluster = ~ store_id
+)
+
+etable(list("CF demand (analytic SE)" = m_demand_cf_ols))
+
+message("Second-stage key coefficients (analytic SE -- bootstrap pending):")
+message(sprintf("  Baseline elasticity (lnP_dm):    %.3f",
+                coef(m_demand_cf_ols)["lnP_dm"]))
+message(sprintf("  SOE rotation (lnP_dm_soe):       %.3f",
+                coef(m_demand_cf_ols)["lnP_dm_soe"]))
+message(sprintf("  Post-SOE rotation (lnP_dm_post): %.3f",
+                coef(m_demand_cf_ols)["lnP_dm_post"]))
+
+
+# ----------------------------------------------------------------------------
+# Robustness checks
+# ----------------------------------------------------------------------------
+
+# 1. Restrict to pre-SOE and during-SOE only (drop post) to check stability
+m_demand_cf_soe_only <- feols(
+  lnQ ~ SoE + lnP_dm + lnP_dm_soe + resid_fs1 + resid_fs2 | product + store_id,
+  data    = cf_data %>% filter(postSoE == 0),
+  cluster = ~ store_id
+)
+
+# 2. Run plain OLS (no CF) on same sample for comparison
+m_demand_ols <- feols(
+  lnQ ~ SoE + postSoE + lnP_dm + lnP_dm_soe + lnP_dm_post | product + store_id,
+  data    = cf_data,
+  cluster = ~ store_id
+)
+
+etable(list("OLS" = m_demand_ols, "CF" = m_demand_cf_ols))
+
+# 3. Drop first 8 SOE weeks to check if stockpiling drives rotation
+cf_data_nosurge <- cf_data %>%
+  left_join(
+    panel_est %>%
+      filter(SoE == 1) %>%
+      group_by(store_id, product) %>%
+      mutate(soe_week_num = row_number()) %>%
+      select(store_id, product, week_seq, soe_week_num),
+    by = c("store_id", "product", "week_seq")
+  ) %>%
+  filter(is.na(soe_week_num) | soe_week_num > 8)
+
+m_demand_nosurge <- feols(
+  lnQ ~ SoE + postSoE +
+    lnP_dm + lnP_dm_soe + lnP_dm_post +
+    resid_fs1 + resid_fs2 + resid_fs3 |
+    product + store_id,
+  data    = cf_data_nosurge,
+  cluster = ~ store_id
+)
+
+etable(list(
+  "Full SOE"      = m_demand_cf_ols,
+  "Drop first 8w" = m_demand_nosurge
+))
+
+# ----------------------------------------------------------------------------
+# Step 5: bootstrap standard errors
+# ----------------------------------------------------------------------------
+# Resample stores with replacement (cluster bootstrap). Re-runs all three
+# first stages + second stage on each bootstrap sample. B = 200 replications.
+# ----------------------------------------------------------------------------
+
+message("Bootstrapping standard errors (B = 200, clustered at store level) ...")
+message("This may take several hours. Consider running overnight.")
+
+set.seed(42)
+B          <- 200
+store_ids  <- unique(cf_data$store_id)
+boot_coefs <- matrix(NA, nrow = B, ncol = length(coef(m_demand_cf_ols)))
+colnames(boot_coefs) <- names(coef(m_demand_cf_ols))
+
+t0_boot <- proc.time()
+
+for (b in seq_len(B)) {
+  
+  sampled_stores <- sample(store_ids, length(store_ids), replace = TRUE)
+  
+  boot_df <- map_dfr(
+    seq_along(sampled_stores),
+    ~ cf_data %>%
+      filter(store_id == sampled_stores[.x]) %>%
+      mutate(store_boot = paste0("s", .x))
+  ) %>%
+    mutate(store_id_boot = as.factor(store_boot))
+  
+  tryCatch({
+    bfs1 <- feols(
+      lnP_dm ~ Z_jist + Z_soe + Z_post + SoE + postSoE | product + store_id_boot,
+      data = boot_df, warn = FALSE, notes = FALSE
+    )
+    bfs2 <- feols(
+      lnP_dm_soe ~ Z_jist + Z_soe + Z_post + SoE + postSoE | product + store_id_boot,
+      data = boot_df, warn = FALSE, notes = FALSE
+    )
+    bfs3 <- feols(
+      lnP_dm_post ~ Z_jist + Z_soe + Z_post + SoE + postSoE | product + store_id_boot,
+      data = boot_df, warn = FALSE, notes = FALSE
+    )
+    
+    boot_df <- boot_df %>%
+      mutate(
+        resid_fs1 = resid(bfs1),
+        resid_fs2 = resid(bfs2),
+        resid_fs3 = resid(bfs3)
+      )
+    
+    bss <- feols(
+      lnQ ~ SoE + postSoE +
+        lnP_dm + lnP_dm_soe + lnP_dm_post +
+        resid_fs1 + resid_fs2 + resid_fs3 |
+        product + store_id_boot,
+      data = boot_df, warn = FALSE, notes = FALSE
+    )
+    
+    boot_coefs[b, names(coef(bss))] <- coef(bss)
+    
+  }, error = function(e) {
+    message(sprintf("Bootstrap rep %d failed: %s", b, conditionMessage(e)))
+  })
+  
+  if (b %% 20 == 0) {
+    elapsed <- (proc.time() - t0_boot)["elapsed"]
+    message(sprintf("  Bootstrap rep %d / %d  (%.1f min elapsed)", b, B, elapsed / 60))
+  }
+}
+
+message(sprintf("Bootstrap done in %.1f minutes.",
+                (proc.time() - t0_boot)["elapsed"] / 60))
+
+boot_se <- apply(boot_coefs, 2, sd,       na.rm = TRUE)
+boot_ci <- apply(boot_coefs, 2, quantile, probs = c(0.025, 0.975), na.rm = TRUE)
+
+demand_results <- tibble(
+  term     = names(coef(m_demand_cf_ols)),
+  estimate = coef(m_demand_cf_ols),
+  boot_se  = boot_se[names(coef(m_demand_cf_ols))],
+  ci_low   = boot_ci["2.5%",  names(coef(m_demand_cf_ols))],
+  ci_high  = boot_ci["97.5%", names(coef(m_demand_cf_ols))]
+) %>%
+  mutate(
+    z        = estimate / boot_se,
+    p_val    = 2 * pnorm(-abs(z)),
+    stars    = case_when(
+      p_val < 0.01 ~ "***",
+      p_val < 0.05 ~ "**",
+      p_val < 0.10 ~ "*",
+      TRUE         ~ ""
+    ),
+    coef_str = paste0(formatC(estimate, digits = 3, format = "f"), stars),
+    se_str   = paste0("(", formatC(boot_se, digits = 3, format = "f"), ")")
+  )
+
+print(demand_results %>% select(term, estimate, boot_se, ci_low, ci_high, stars))
+
+if (SAVE_CSV) {
+  write.csv(demand_results, "tables_csv/25_tab_demand_cf.csv",      row.names = FALSE)
+  write.csv(boot_coefs,     "tables_csv/25_boot_coefs_raw.csv",     row.names = FALSE)
+  message("Saved: tables_csv/25_tab_demand_cf.csv")
+}
+
+# ----------------------------------------------------------------------------
+# Step 6: LaTeX output -- OLS | CF (analytic SE) | CF (bootstrap SE)
+# ----------------------------------------------------------------------------
+
+display_terms <- c(
+  "SoE"         = "$SOE_{st}$",
+  "postSoE"     = "$postSOE_{st}$",
+  "lnP_dm"      = "$\\ln p_{jist} - \\overline{\\ln p}_{j}$",
+  "lnP_dm_soe"  = "$(\\ln p_{jist} - \\overline{\\ln p}_{j}) \\times SOE_{st}$",
+  "lnP_dm_post" = "$(\\ln p_{jist} - \\overline{\\ln p}_{j}) \\times postSOE_{st}$"
+)
+
+# Extract display-term coef and SE strings from a feols object
+extract_display <- function(model, terms) {
+  cf  <- coef(model)
+  ses <- se(model)
+  map_dfr(names(terms), function(nm) {
+    est   <- if (nm %in% names(cf))  cf[nm]  else NA_real_
+    s     <- if (nm %in% names(ses)) ses[nm] else NA_real_
+    pv    <- if (!is.na(est) && !is.na(s) && s > 0) 2 * pnorm(-abs(est / s)) else NA_real_
+    stars <- case_when(
+      is.na(pv)  ~ "",
+      pv < 0.01  ~ "***",
+      pv < 0.05  ~ "**",
+      pv < 0.10  ~ "*",
+      TRUE       ~ ""
+    )
+    tibble(
+      term     = nm,
+      coef_str = if (!is.na(est)) paste0(formatC(est, digits = 3, format = "f"), stars) else "",
+      se_str   = if (!is.na(s))   paste0("(", formatC(s,   digits = 3, format = "f"), ")") else ""
+    )
+  })
+}
+
+ols_disp  <- extract_display(m_demand_ols,    display_terms)
+cf_disp   <- extract_display(m_demand_cf_ols, display_terms)
+boot_disp <- demand_results %>%
+  filter(term %in% names(display_terms)) %>%
+  arrange(match(term, names(display_terms))) %>%
+  select(term, coef_str, se_str)
+
+# Build alternating coef / SE rows for all five display terms
+coef_rows <- bind_rows(lapply(names(display_terms), function(nm) {
+  bind_rows(
+    tibble(label = display_terms[[nm]],
+           col1  = ols_disp$coef_str[ ols_disp$term  == nm],
+           col2  = cf_disp$coef_str[  cf_disp$term   == nm],
+           col3  = boot_disp$coef_str[boot_disp$term == nm]),
+    tibble(label = "",
+           col1  = ols_disp$se_str[ ols_disp$term  == nm],
+           col2  = cf_disp$se_str[  cf_disp$term   == nm],
+           col3  = boot_disp$se_str[boot_disp$term == nm])
+  )
+}))
+
+# Fit-stat rows (R2 is same for CF analytic and CF bootstrap -- same model)
+fit_rows <- tibble(
+  label = c("Observations", "$R^2$"),
+  col1  = c(formatC(nobs(m_demand_ols),    format = "d", big.mark = ","),
+            formatC(r2(m_demand_ols)["r2"],    digits = 3, format = "f")),
+  col2  = c(formatC(nobs(m_demand_cf_ols), format = "d", big.mark = ","),
+            formatC(r2(m_demand_cf_ols)["r2"], digits = 3, format = "f")),
+  col3  = c(formatC(nobs(m_demand_cf_ols), format = "d", big.mark = ","),
+            formatC(r2(m_demand_cf_ols)["r2"], digits = 3, format = "f"))
+)
+
+demand_tbl3 <- bind_rows(coef_rows, fit_rows)
+n_coef_rows <- nrow(coef_rows)  # row after which to insert \midrule
+
+save_tex(
+  kbl(demand_tbl3,
+      format    = "latex", booktabs = TRUE, escape = FALSE,
+      col.names = c("", "(1) OLS", "(2) CF", "(3) CF bootstrap"),
+      caption   = "Demand rotation: OLS, control function with analytic SEs, and control function with bootstrap SEs",
+      label     = "tab:demand_cf",
+      align     = "lrrr") %>%
+    kable_styling(latex_options = "hold_position") %>%
+    row_spec(n_coef_rows, extra_latex_after = "\\midrule") %>%
+    footnote(
+      general = c(
+        "Dependent variable: $\\ln Q_{jist}$ (log quantity sold per store-product-week).",
+        "Price variable: demeaned log net retail price, $\\ln p_{jist} - \\overline{\\ln p}_{j}$.",
+        "Column (1): OLS with no endogeneity correction.",
+        "Columns (2)--(3): control function approach; residuals from three first stages",
+        "included as regressors to absorb endogenous price variation.",
+        "Column (2) reports analytic standard errors (inconsistent -- shown for comparison only).",
+        "Column (3) reports bootstrap standard errors ($B = 200$ replications, store-clustered).",
+        "Instrument: $Z_{jist}$ = inverse-distance-weighted average log net price",
+        "of the same product in stores outside state $s$ during week $t$.",
+        "First-stage F-statistics reported in Table~\\ref{demand_firststage}.",
+        "Fixed effects: product and store.",
+        "Signif. codes: ***: 0.01, **: 0.05, *: 0.1"
+      ),
+      general_title = "", escape = FALSE
+    ),
+  "26_tab_demand_cf.tex"
+)
+message("Saved: tables_latex/26_tab_demand_cf.tex")
+
+message("M3d (control function demand estimation) complete.")
+  
 message("Mechanism 3 (countercyclical promotional pricing) complete.")

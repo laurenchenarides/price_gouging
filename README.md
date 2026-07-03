@@ -214,7 +214,6 @@ Scripts are called in order by `run_all.R`. The table below maps each script to 
 | `18_fig_uniformity_heterog_coef.png` | Mechanisms: Mechanism 1 (Constant Retail Prices) | Retailer heterogeneity in uniformity |
 | `19_fig_gross_net_gap.png` | Mechanisms: Mechanism 3 (Countercyclical Pricing) | Gross-to-net price gap over time |
 | `20_fig_promo_intensity.png` | Mechanisms: Mechanism 3 (Countercyclical Pricing) | Share on sale and discount depth over time |
-| `21_fig_price_dispersion.png` | Mechanisms: Mechanism 3 (Countercyclical Pricing) | Within-store price dispersion over time |
 
 ---
 

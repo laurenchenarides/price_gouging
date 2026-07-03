@@ -1,0 +1,42 @@
+
+\begin{table}[htbp]
+   \caption{\label{tab:demand_firststage} First-stage regressions for control function demand estimation}
+   \centering
+   \begin{tabular}{lccc}
+      \tabularnewline \midrule \midrule
+      Model:                          & (1)            & (2)             & (3)\\  
+      \midrule
+      \emph{Variables}\\
+      $Z_{jist}$                      & 0.919$^{***}$  & 0.165$^{***}$   & 0.366$^{***}$\\   
+                                      & (0.007)        & (0.002)         & (0.003)\\   
+      $Z_{jist} \times SOE_{st}$      & 0.002          & -0.025$^{***}$  & 0.056$^{***}$\\   
+                                      & (0.001)        & (0.003)         & (0.0008)\\   
+      $Z_{jist} \times postSOE_{st}$  & 0.014$^{***}$  & -0.018$^{***}$  & 0.141$^{***}$\\   
+                                      & (0.002)        & (0.0002)        & (0.002)\\   
+      SoE                             & -0.018$^{***}$ & -0.089$^{***}$  & 0.055$^{***}$\\   
+                                      & (0.001)        & (0.002)         & (0.0005)\\   
+      postSoE                         & -0.007$^{***}$ & -0.0008$^{***}$ & 0.028$^{***}$\\   
+                                      & (0.002)        & (0.0002)        & (0.003)\\   
+      \midrule
+      \emph{Fixed-effects}\\
+      product                         & Yes            & Yes             & Yes\\  
+      store\_id                       & Yes            & Yes             & Yes\\  
+      \midrule
+      \emph{Fit statistics}\\
+      Observations                    & 604,121        & 604,121         & 604,121\\  
+      R$^2$                           & 0.71847        & 0.34341         & 0.50226\\  
+      F-test                          & 155.39         & 31.846          & 61.441\\  
+      \midrule \midrule
+      \multicolumn{4}{l}{\emph{Clustered (store\_id) standard-errors in parentheses}}\\
+      \multicolumn{4}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+   \end{tabular}
+   
+   \par \raggedright 
+   Dependent variables are the three endogenous terms in equation~\ref{eq:demand\_butters}.\\
+   Instrument: $Z_{jist}$ = inverse-distance-weighted average log net price of\\
+   the same product in stores outside state $s$ during week $t$.\\
+   Fixed effects: product and store. Standard errors clustered at the store level.\\
+   F-statistic tests joint significance of instruments in each first stage.
+\end{table}
+
+

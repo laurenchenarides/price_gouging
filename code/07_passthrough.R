@@ -5,7 +5,9 @@
 #
 # Purpose: Pass-through regressions and optional duration extension.
 #   11.  Baseline pass-through (with and without week FEs)
-#   11a. Optional: duration extension (Dur_wk interaction)
+#   11a. IV pass-through
+#   11b. Duration extension (Dur_wk interaction)
+#   11c. Pass-through in logs (Sangani, 2026 check)
 #
 # Specification (main):
 #   Delta_P_ist = alpha + beta1*Delta_w + beta2*(Delta_w*SOE) +
@@ -15,7 +17,7 @@
 # beta2: change in pass-through during SOE
 # beta3: change in pass-through after SOE ends
 #
-# Preferred specification includes week FEs (column 2). The identifying variation
+# Preferred specification includes week FEs. The identifying variation
 # is Delta_w * SOE, which varies across stores within a week and is not absorbed
 # by week fixed effects. The no-FE version is also reported for sensitivity.
 #
@@ -36,6 +38,7 @@
 #
 # Outputs (tables_latex/):
 #   12_tab_passthrough_reg.tex
+#   24_tab_iv_passthrough.tex
 #   13_tab_passthrough_duration.tex      (if RUN_DUR_EXTENSION)
 #   14_tab_passthrough_implied_soe.tex   (if RUN_DUR_EXTENSION)
 #
@@ -121,9 +124,130 @@ ggsave("figures/12_fig_passthrough_coef.png", g_pt_coef,
        width = 9, height = 5, dpi = 300)
 message("Saved: figures/12_fig_passthrough_coef.png")
 
+# ==============================================================================
+# 11a. IV PASS-THROUGH
+# ==============================================================================
+# Instrument: distance-weighted cross-market wholesale price (Z_ist).
+#   For each store i in state s, Z_ist is the inverse-distance-weighted average
+#   of dW_jt for the same product in all stores j outside state s. This
+#   instrument shifts the supply curve (cost) without directly affecting local
+#   demand conditions.
+#
+# Store lat/lon: available from stg.pos_store_master (store_info object,
+#   loaded in 00_read_in_data.R).
+#
+# Specification:
+#   Stage 1: dW_ist = pi0 + pi1*Z_ist + pi2*(Z_ist*SoE) + gamma_i + tau_t
+#   Stage 2: dP_ist = alpha + beta1*dW_hat + beta2*(dW_hat*SoE) +
+#                     beta3*(dW_hat*postSoE) + gamma_i + delta_j + tau_t
+#
+# The SOE interaction on the instrument (Z*SoE) tests whether pass-through
+# changed during the emergency period -- a shift in pass-through is consistent
+# with a rotation in demand elasticity.
+# ==============================================================================
+
+message("Building distance-weighted IV ...")
+
+store_info <- store_info %>%
+  rename(latitude = lat, longitude = lon)
+
+if (!all(c("latitude", "longitude") %in% names(store_info))) {
+  warning("store_info missing latitude/longitude. Check stg.pos_store_master column names.")
+  message("Skipping IV pass-through (M3d). Run with lat/lon columns available.")
+} else {
+  
+  pt_iv_data <- panel_est %>%
+    filter(is.finite(dP), is.finite(dW)) %>%
+    left_join(
+      store_info %>%
+        select(store_id, latitude, longitude) %>%
+        distinct() %>%
+        mutate(store_id = as.factor(store_id)),
+      by = "store_id"
+    ) %>%
+    filter(!is.na(latitude), !is.na(longitude))
+  
+  store_coords <- pt_iv_data %>%
+    select(store_id, latitude, longitude, sst) %>%
+    distinct()
+  
+  message("Computing cross-market IV (this may take a moment) ...")
+  
+  dw_store_week <- pt_iv_data %>%
+    select(store_id, product, week_seq, dW, sst, latitude, longitude) %>%
+    distinct()
+  
+  iv_raw <- dw_store_week %>%
+    rename(lat_i = latitude, lon_i = longitude, sst_i = sst) %>%
+    inner_join(
+      dw_store_week %>%
+        rename(store_j = store_id, dW_j = dW, sst_j = sst,
+               lat_j = latitude, lon_j = longitude),
+      by = c("product", "week_seq"),
+      relationship = "many-to-many"
+    ) %>%
+    filter(sst_i != sst_j) %>%
+    mutate(
+      dist_ij = sqrt((lat_i - lat_j)^2 + (lon_i - lon_j)^2),
+      weight  = 1 / pmax(dist_ij, 0.01)
+    ) %>%
+    group_by(store_id, product, week_seq) %>%
+    summarise(
+      Z_ist = weighted.mean(dW_j, w = weight, na.rm = TRUE),
+      .groups = "drop"
+    )
+  
+  pt_iv_data <- pt_iv_data %>%
+    left_join(iv_raw, by = c("store_id", "product", "week_seq")) %>%
+    filter(is.finite(Z_ist))
+  
+  message(sprintf("IV panel: %d obs, %d stores.", nrow(pt_iv_data), n_distinct(pt_iv_data$store_id)))
+  
+  m_iv <- feols(
+    dP ~ 1 | product + store_id + week_fe |
+      dW + dW:SoE + dW:postSoE ~ Z_ist + Z_ist:SoE + Z_ist:postSoE,
+    data    = pt_iv_data,
+    cluster = ~ sst
+  )
+  
+  m_ols_iv_sample <- feols(
+    dP ~ dW + dW:SoE + dW:postSoE | product + store_id + week_fe,
+    data    = pt_iv_data,
+    cluster = ~ sst
+  )
+  
+  etable(list("(1) OLS" = m_ols_iv_sample, "(2) IV" = m_iv))
+  
+  etable(
+    list("(1) OLS" = m_ols_iv_sample, "(2) IV" = m_iv),
+    tex    = TRUE,
+    file   = "tables_latex/24_tab_iv_passthrough.tex",
+    title  = "Pass-through: OLS vs IV (demand rotation instrument)",
+    label  = "tab:iv_passthrough",
+    digits = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2 + ivf,
+    dict   = c(
+      "fit_dW"         = "$\\widehat{\\Delta w}_{ist}$",
+      "fit_dW:SoE"     = "$\\widehat{\\Delta w}_{ist} \\times SOE_{st}$",
+      "fit_dW:postSoE" = "$\\widehat{\\Delta w}_{ist} \\times postSOE_{st}$",
+      "dW"             = "$\\Delta w_{ist}$",
+      "dW:SoE"         = "$\\Delta w_{ist} \\times SOE_{st}$",
+      "dW:postSoE"     = "$\\Delta w_{ist} \\times postSOE_{st}$"
+    ),
+    headers = list("Pass-through: $\\Delta p_{ist}$" = 2),
+    notes = c(
+      "IV instrument: $Z_{ist}$ = inverse-distance-weighted mean $\\Delta w_{jt}$",
+      "across stores $j$ in other states, using store latitude and longitude.",
+      "Column (2) instruments $\\Delta w$, $\\Delta w \\times SOE$, and $\\Delta w \\times postSOE$",
+      "with $Z_{ist}$, $Z_{ist} \\times SOE$, and $Z_{ist} \\times postSOE$.",
+      "FEs: product, store, week. Standard errors clustered at the state level."
+    )
+  )
+  message("Saved: tables_latex/24_tab_iv_passthrough.tex")
+  
+}
 
 # ==============================================================================
-# 11a. EXTENSION: PASS-THROUGH BY DURATION
+# 11b. EXTENSION: PASS-THROUGH BY DURATION
 # ==============================================================================
 # Adds a three-way interaction dW*SOE*Dur_wk to ask how pass-through evolves
 # as enforcement continues. Week FEs are included; the duration effect is
@@ -232,7 +356,7 @@ g_pt_dur
 
 
 # ==============================================================================
-# 11b. PASS-THROUGH IN LOGS (ROBUSTNESS -- Sangani 2026)
+# 11c. PASS-THROUGH IN LOGS (ROBUSTNESS -- Sangani 2026)
 # ==============================================================================
 # Sangani (QJE 2026) shows that pass-through measured in percentages (logs)
 # appears incomplete even when pass-through in levels is complete, because
