@@ -183,13 +183,7 @@ message("Saved: figures/19_fig_gross_net_gap.png")
 
 promo_panel <- tryCatch({
   message("Attempting to load stg.pd_store_upc_week from SQL ...")
-  con_promo <- dbConnect(
-    odbc::odbc(),
-    Driver             = "SQL Server",
-    Server             = "Orchard",
-    Database           = "DecaData",
-    Trusted_Connection = "Yes"
-  )
+  con_promo <- open_decadata_connection()   # server/database set in code/config.R
   df <- dplyr::tbl(con_promo, dbplyr::in_schema("stg", "pd_store_upc_week")) %>%
     collect() %>%
     mutate(
@@ -338,9 +332,10 @@ if (!is.null(promo_panel)) {
   
   ggsave("figures/20_fig_promo_intensity.png", g_promo, width = 10, height = 5, dpi = 300)
   message("Saved: figures/20_fig_promo_intensity.png")
-}
 
-g_promo
+  g_promo
+
+}
 
 # ==============================================================================
 # M3c. GROSS PRICE STABILITY DURING SOE
@@ -450,11 +445,18 @@ message("Estimating M3d: control function demand rotation ...")
 # Step 0: check that store lat/lon is available
 # ------------------------------------------------------------------------------
 
+if (all(c("lat", "lon") %in% names(store_info))) {
+  store_info <- store_info %>% rename(latitude = lat, longitude = lon)
+}
 if (!all(c("latitude", "longitude") %in% names(store_info))) {
   warning("store_info missing latitude/longitude. Skipping M3d.")
+  M3D_OK <- FALSE
 } else {
   message("OK to continue with M3d.")
+  M3D_OK <- TRUE
 }
+
+if (M3D_OK) {
   
 # ----------------------------------------------------------------------------
 # Step 1: build the CF data frame with log price and log quantity
@@ -713,6 +715,8 @@ etable(list(
 # first stages + second stage on each bootstrap sample. B = 200 replications.
 # ----------------------------------------------------------------------------
 
+if (RUN_CF_BOOTSTRAP) {
+  
 message("Bootstrapping standard errors (B = 200, clustered at store level) ...")
 message("This may take several hours. Consider running overnight.")
 
@@ -911,6 +915,12 @@ save_tex(
 )
 message("Saved: tables_latex/26_tab_demand_cf.tex")
 
+} else {
+  message("RUN_CF_BOOTSTRAP = FALSE: skipping CF bootstrap and Table 26 (set flag in code/config.R).")
+}
+
 message("M3d (control function demand estimation) complete.")
-  
+
+}  # end if (M3D_OK)
+
 message("Mechanism 3 (countercyclical promotional pricing) complete.")
