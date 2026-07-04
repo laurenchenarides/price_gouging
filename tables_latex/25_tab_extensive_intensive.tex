@@ -1,0 +1,35 @@
+
+\begin{table}[htbp]
+   \caption{\label{tab:extensive_intensive} Extensive vs.\ intensive decomposition of the SOE demand surge}
+   \centering
+   \begin{tabular}{lccc}
+      \tabularnewline \midrule \midrule
+      Model:          & (1)           & (2)           & (3)\\  
+      \midrule
+      \emph{Variables}\\
+      SOE$_{st}$      & 0.148$^{***}$ & 0.095$^{***}$ & 0.052$^{***}$\\   
+                      & (0.009)       & (0.008)       & (0.001)\\   
+      Post-SOE$_{st}$ & 0.014         & -0.024        & 0.038$^{***}$\\   
+                      & (0.010)       & (0.013)       & (0.003)\\   
+      \midrule
+      \emph{Fixed-effects}\\
+      product         & Yes           & Yes           & Yes\\  
+      store\_id       & Yes           & Yes           & Yes\\  
+      \midrule
+      \emph{Fit statistics}\\
+      Observations    & 606,546       & 606,546       & 606,546\\  
+      R$^2$           & 0.81610       & 0.78920       & 0.90298\\  
+      \midrule \midrule
+      \multicolumn{4}{l}{\emph{Clustered (sst) standard-errors in parentheses}}\\
+      \multicolumn{4}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+   \end{tabular}
+   
+   \par \raggedright 
+   A purchase occasion $N$ is a distinct basket (store $\times$ date $\times$ register $\times$ transaction).\\
+   Column (1): log weekly volume $\ln Q$. Column (2): log purchase occasions $\ln N$ (extensive margin).\\
+   Column (3): log volume per occasion $\ln(Q/N)$ (intensive margin).\\
+   By the identity $\ln Q = \ln N + \ln(Q/N)$, the SOE coefficients satisfy $\beta_Q = \beta_N + \beta_{Q/N}$.\\
+   FEs: product and store. Standard errors clustered at the state level.
+\end{table}
+
+

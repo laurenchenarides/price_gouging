@@ -1,0 +1,36 @@
+
+\begin{table}[htbp]
+   \caption{\label{tab:category_decomp} Category-level robustness: extensive vs.\ intensive decomposition of the demand surge}
+   \centering
+   \begin{tabular}{lccc}
+      \tabularnewline \midrule \midrule
+      Model:          & (1)           & (2)           & (3)\\  
+      \midrule
+      \emph{Variables}\\
+      SOE$_{st}$      & 0.110$^{***}$ & 0.080$^{***}$ & 0.029$^{***}$\\   
+                      & (0.010)       & (0.009)       & (0.001)\\   
+      Post-SOE$_{st}$ & 0.017$^{*}$   & 0.003         & 0.014$^{***}$\\   
+                      & (0.008)       & (0.010)       & (0.002)\\   
+      \midrule
+      \emph{Fixed-effects}\\
+      category        & Yes           & Yes           & Yes\\  
+      store\_id       & Yes           & Yes           & Yes\\  
+      \midrule
+      \emph{Fit statistics}\\
+      Observations    & 629,486       & 629,486       & 629,486\\  
+      R$^2$           & 0.79219       & 0.84983       & 0.91996\\  
+      \midrule \midrule
+      \multicolumn{4}{l}{\emph{Clustered (sst) standard-errors in parentheses}}\\
+      \multicolumn{4}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+   \end{tabular}
+   
+   \par \raggedright 
+   Aggregated over ALL UPCs in each focal category (store-category-week grain).\\
+   Column (1): log category volume. Column (2): log purchase occasions (extensive margin).\\
+   Column (3): log volume per occasion (intensive margin). $\beta_Q = \beta_N + \beta_{Q/N}$.\\
+   The occasion count sums per-variety transaction counts, so a basket buying two\\
+   varieties of a category counts twice; this modestly inflates the extensive margin.\\
+   FEs: category and store. Standard errors clustered at the state level.
+\end{table}
+
+
