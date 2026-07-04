@@ -1678,6 +1678,90 @@ WHERE share_stores_pass >= 0.85;
 SELECT COUNT(*) AS n_weekly_rows FROM stg.store_upc_week;
 
 
+/* ============================================================================
+ * CATEGORY ROLLUP (substitution robustness for Mechanism 3)
+ *
+ * Append to BuildMarkupsNew_2026_04.sql after stg.pos_weekly_presence is built,
+ * OR run standalone (it only reads stg.pos_weekly_presence, stg.store_dim, and
+ * stg.date_week_index, all already materialized).
+ *
+ * Purpose: aggregate ALL UPCs within each of the five focal categories to the
+ *   store-category-week level, so the Mechanism 3 outcomes can be re-estimated
+ *   at the category grain. If the promotional-expansion and demand-surge results
+ *   survive here, they are not an artifact of substitution across varieties
+ *   toward the five selected items.
+ *
+ * Grain: store_id x category x week_seq (over retailers 2/3/5, SE states).
+ * SOE timing is NOT computed here; it is joined in R from panel_est so that it
+ * is identical to the main analysis.
+ * ========================================================================== */
+
+IF OBJECT_ID('stg.store_category_week','U') IS NOT NULL DROP TABLE stg.store_category_week;
+
+SELECT
+    p.store_id,
+    sd.retailer_id,
+    sd.sst,
+    UPPER(p.category)                    AS category,
+    p.week_seq,
+    dwi.week_start,
+    -- Breadth of the assortment aggregated (how many varieties in this cell)
+    COUNT(DISTINCT p.upc)                AS n_upcs,
+    -- Category totals across all varieties
+    SUM(p.weekly_volume)                 AS cat_volume,
+    SUM(p.weekly_net_sales)              AS cat_net_sales,
+    SUM(p.weekly_gross_sales)            AS cat_gross_sales,
+    SUM(p.weekly_total_cost)             AS cat_total_cost,
+    SUM(p.weekly_transactions_total)     AS cat_transactions,       -- variety-occasions (see note)
+    SUM(p.weekly_transactions_on_sale)   AS cat_sale_transactions,
+    -- Revenue-weighted category prices
+    SUM(p.weekly_net_sales)   / NULLIF(SUM(p.weekly_volume), 0)     AS p_net_cat,
+    SUM(p.weekly_gross_sales) / NULLIF(SUM(p.weekly_volume), 0)     AS p_gross_cat,
+    SUM(p.weekly_total_cost)  / NULLIF(SUM(p.weekly_volume), 0)     AS w_cat,
+    -- Share of transactions at a promotional price (composition-free fraction)
+    CAST(SUM(p.weekly_transactions_on_sale) AS float)
+        / NULLIF(SUM(p.weekly_transactions_total), 0)              AS share_on_sale_cat
+INTO stg.store_category_week
+FROM stg.pos_weekly_presence p
+JOIN stg.store_dim        sd  ON sd.store_id  = p.store_id
+JOIN stg.date_week_index  dwi ON dwi.week_seq = p.week_seq
+WHERE sd.retailer_id IN (2, 3, 5)
+  AND UPPER(p.category) IN ('BANANAS','CABBAGE','CUCUMBER','LETTUCE','TOMATOES')
+  AND p.weekly_volume > 0
+GROUP BY
+    p.store_id, sd.retailer_id, sd.sst, UPPER(p.category), p.week_seq, dwi.week_start;
+
+CREATE INDEX IX_store_category_week ON stg.store_category_week(store_id, category, week_seq);
+
+/* Note on cat_transactions: this is SUM over varieties of per-UPC transaction
+ * counts, so a basket buying two varieties of the same category counts twice.
+ * For produce this is rare; it slightly inflates the extensive-margin count.
+ * An exact distinct-basket count across varieties would require re-extracting
+ * REGISTER_NUMBER x TRANSACTION_NUMBER for all category UPCs from
+ * dbo.tempPOS_retailer_2_5 (stg.pos_core drops those fields), which is a heavier
+ * extract; the price and share-on-sale outcomes below do not depend on it. */
+
+-- Check: how many varieties per category, and coverage
+SELECT
+    category,
+    COUNT(DISTINCT store_id)         AS n_stores,
+    AVG(CAST(n_upcs AS float))       AS avg_upcs_per_cell,
+    MAX(n_upcs)                      AS max_upcs_per_cell,
+    COUNT(*)                         AS n_store_cat_weeks
+FROM stg.store_category_week
+GROUP BY category
+ORDER BY category;
+
+-- Total distinct UPCs per category (breadth actually captured)
+SELECT UPPER(category) AS category, COUNT(DISTINCT upc) AS n_upcs_total
+FROM stg.pos_weekly_presence p
+JOIN stg.store_dim sd ON sd.store_id = p.store_id
+WHERE sd.retailer_id IN (2,3,5)
+  AND UPPER(p.category) IN ('BANANAS','CABBAGE','CUCUMBER','LETTUCE','TOMATOES')
+GROUP BY UPPER(category)
+ORDER BY category;
+
+
 
 /*==========================
   Information to connect with R

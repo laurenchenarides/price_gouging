@@ -352,3 +352,79 @@ SELECT upc, COUNT(*) AS n_rows FROM stg.pd_store_upc_week GROUP BY upc ORDER BY 
 
 -- Preview
 SELECT TOP 100 * FROM stg.pd_store_upc_week ORDER BY store_id, upc, week_seq;
+
+/* ============================================================================
+ * 4. EXTENSIVE / INTENSIVE DECOMPOSITION INPUTS (Mechanism 3)
+ *
+ * Purpose: measure whether the SOE demand surge came from MORE purchase
+ *   occasions buying the product (extensive margin) or LARGER quantity per
+ *   occasion (intensive margin).
+ *
+ * Unit of a purchase occasion = a distinct basket, identified by
+ *   STORE_NUMBER x TRANSACTION_DATE x REGISTER_NUMBER x TRANSACTION_NUMBER.
+ *   (TRANSACTION_NUMBER is unique within a store-date-register.)
+ *   REWARD_CARD_NUMBER is NOT used -- card numbers are not reliable shopper IDs.
+ *
+ * Identity (per store-UPC-week):
+ *   weekly_volume = weekly_occasions x vol_per_occasion
+ *   => ln Q = ln(occasions) + ln(volume per occasion)
+ *
+ * NOTE: stg.pd_store_upc_week already carries weekly_transactions_total (a count
+ *   of transaction *item lines*) and weekly_volume, which approximate this
+ *   decomposition. This table provides the exact distinct-basket occasion count.
+ * ========================================================================== */
+
+IF OBJECT_ID('stg.pd_ext_int_week','U') IS NOT NULL DROP TABLE stg.pd_ext_int_week;
+
+SELECT
+    t.week_seq,
+    t.store_id,
+    t.retailer_id,
+    t.sst,
+    t.upc,
+    t.soe_period,
+    dwi.week_start,
+    -- Extensive margin: distinct purchase occasions (baskets) buying this
+    -- product in this store-week. Date is included in the key because
+    -- TRANSACTION_NUMBER resets by date.
+    COUNT(DISTINCT CONCAT(
+        CONVERT(varchar(8), t.trx_date, 112), '-',
+        CAST(t.register_number    AS varchar(20)), '-',
+        CAST(t.transaction_number AS varchar(20))
+    ))                                                       AS weekly_occasions,
+    -- Total quantity
+    SUM(t.volume)                                            AS weekly_volume,
+    -- Intensive margin: quantity per occasion
+    SUM(t.volume) / NULLIF(COUNT(DISTINCT CONCAT(
+        CONVERT(varchar(8), t.trx_date, 112), '-',
+        CAST(t.register_number    AS varchar(20)), '-',
+        CAST(t.transaction_number AS varchar(20))
+    )), 0)                                                   AS vol_per_occasion,
+    COUNT(*)                                                 AS weekly_item_lines
+INTO stg.pd_ext_int_week
+FROM stg.pd_transactions t
+JOIN stg.date_week_index dwi
+  ON dwi.week_seq = t.week_seq
+WHERE t.soe_period IS NOT NULL
+  AND t.volume > 0
+GROUP BY
+    t.week_seq, t.store_id, t.retailer_id, t.sst, t.upc, t.soe_period, dwi.week_start;
+
+CREATE INDEX IX_pd_ext_int_week ON stg.pd_ext_int_week(store_id, upc, week_seq);
+
+-- Descriptive: extensive vs intensive by product and SOE period
+SELECT
+    upc,
+    soe_period,
+    COUNT(*)                               AS n_store_weeks,
+    AVG(CAST(weekly_occasions AS float))   AS avg_occasions,
+    AVG(vol_per_occasion)                  AS avg_vol_per_occasion,
+    AVG(weekly_volume)                     AS avg_volume
+FROM stg.pd_ext_int_week
+GROUP BY upc, soe_period
+ORDER BY upc, soe_period;
+
+-- Sanity: identity holds row-by-row (should return 0 rows)
+SELECT TOP 20 *
+FROM stg.pd_ext_int_week
+WHERE ABS(weekly_volume - weekly_occasions * vol_per_occasion) > 0.01;
