@@ -5,7 +5,8 @@
 
 figures/
 tables_csv/
+data/
+images/
 
 *.rds
-*.png
 *.xlsx
