@@ -232,8 +232,8 @@ price_gouging/
 │   ├── 06_passthrough.R                       # Section 5.2
 │   ├── 07_uniform_pricing.R                   # Section 5.1
 │   ├── 08_demand_rotation.R                   # Section 5.3
-│   ├── BuildMarkupsNew_2026_04.sql            # Builds stg.store_upc_week and pos_* tables
-│   ├── BuildMarkupsNew_Consumer_Tables.sql    # Consumer-level transaction diagnostics
+├── code/sql
+│   ├── BuildMarkupsNew_2026_04.sql             # Builds stg.store_upc_week and pos_* tables
 │   └── BuildMarkupsNew_PriceDiscrimination.sql # Builds stg.pd_store_upc_week for Mechanism 3
 ├── cpi/
 │   ├── cpi_20152025.xlsx                      # BLS CPI-U (not tracked in git)

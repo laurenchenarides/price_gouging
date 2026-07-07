@@ -1,5 +1,5 @@
 # ==============================================================================
-# 08_demand_rotation.R
+# 08_promotional_expansion.R
 #
 # Food Retailer Pricing Behavior Under Anti-Price Gouging Laws: Evidence from
 # Wholesale and Retail Scanner Data -- Chenarides, Richards, and Dong
@@ -11,12 +11,13 @@
 #   The net price decline during the SOE is a PROMOTIONAL-FREQUENCY phenomenon:
 #   posted shelf prices were flat, the share of transactions on sale rose
 #   sharply, and net prices fell. We document this channel and then decompose
-#   the coincident demand surge into extensive vs. intensive margins, following
-#   the extensive-margin logic of Butters et al. (2025).
+#   the coincident rise in quantity sold into extensive vs. intensive margins,
+#   following the extensive-margin logic of Butters et al. (2025).
 #
 #   CUT from the earlier version:
-#     - Control-function demand-rotation estimation (the SOE elasticity change
-#       is not separately identified in a single, simultaneous emergency).
+#     - Control-function estimation of a change in demand elasticity (the SOE
+#       elasticity change is not separately identified in a single, simultaneous
+#       emergency).
 #     - Within-store/within-day price-dispersion test (the data contain none:
 #       on any store-day all shoppers pay the same price). This is retained only
 #       as a one-line motivating fact for the inter-temporal framing.
@@ -25,7 +26,7 @@
 #   M3a. Gross-net price gap over time -- promotional discount per unit.
 #   M3b. Promotional intensity -- share_on_sale and discount depth.
 #   M3c. Gross price stability -- gross (shelf) flat vs net fell.
-#   M3d. Extensive vs. intensive decomposition of the demand surge:
+#   M3d. Extensive vs. intensive decomposition of the rise in quantity sold:
 #        did Q rise through more purchase occasions (extensive) or larger
 #        quantity per occasion (intensive)?  ln Q = ln(occasions) + ln(Q/occ),
 #        so the SOE coefficients satisfy beta_Q = beta_ext + beta_int.
@@ -34,11 +35,14 @@
 #   panel_est    -- from 02_build_panel.R (store-product-week)
 #   promo_panel  -- from stg.pd_store_upc_week (read via SQL connection)
 #
-# OUTPUTS (tables_latex/):
-#   21_tab_gross_net_gap.tex
-#   22_tab_promo_intensity.tex
-#   23_tab_gross_price_stability.tex
-#   25_tab_extensive_intensive.tex
+# OUTPUTS (tables_latex/)   [file prefixes follow the order the tables appear
+#                            in the paper: three body tables, then appendix]
+#   21_tab_gross_price_stability.tex   (Sec 5.3 body, table 1)
+#   22_tab_promo_intensity.tex         (Sec 5.3 body, table 2)
+#   23_tab_extensive_intensive.tex     (Sec 5.3 body, table 3)
+#   24_tab_gross_net_gap.tex           (appendix)
+#   25_tab_category_price_promo.tex    (appendix, category robustness)
+#   26_tab_category_decomp.tex         (appendix, category robustness)
 #
 # OUTPUTS (figures/):
 #   19_fig_gross_net_gap.png
@@ -64,6 +68,7 @@ if (!exists("USE_EXACT_OCCASIONS")) USE_EXACT_OCCASIONS <- TRUE
 # The gross-net gap equals the volume-weighted discount per unit.
 # A wider gap during SOE means retailers ran more frequent promotions.
 # The gap is zero when no promotion is running (everyone pays shelf price).
+# (Regression table is an APPENDIX table: 24_tab_gross_net_gap.tex.)
 # ==============================================================================
 
 gap_data <- panel_est %>%
@@ -82,7 +87,7 @@ etable(list("(1) Pooled" = m_gap_base))
 etable(
   list("(1) Pooled" = m_gap_base),
   tex    = TRUE,
-  file   = "tables_latex/21_tab_gross_net_gap.tex",
+  file   = "tables_latex/24_tab_gross_net_gap.tex",
   title  = "Effect of SOE on gross--net price gap (promotional discount per unit)",
   label  = "tab:gross_net_gap",
   digits = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2,
@@ -95,7 +100,7 @@ etable(
     "FEs: product and store. Standard errors clustered at the state level."
   )
 )
-message("Saved: tables_latex/21_tab_gross_net_gap.tex")
+message("Saved: tables_latex/24_tab_gross_net_gap.tex")
 
 gap_state_summary <- gap_data %>%
   group_by(sst, soe_period = case_when(
@@ -257,7 +262,9 @@ if (!is.null(promo_panel)) {
 # M3c. GROSS PRICE STABILITY DURING SOE
 # ==============================================================================
 # Gross (shelf) price flat + net price fell => decline is promotional, not a
-# shelf-price cut. Run on promo_panel so gross and net come from one source.
+# shelf-price cut. Run on panel_est, which carries both p_ist_gross and
+# p_ist (= p_ist_net), so column 2 reproduces the baseline net-price estimate
+# exactly (same trimmed estimation panel as Table price_reg).
 # ==============================================================================
 
 gp <- panel_est %>% filter(p_ist_gross > 0, is.finite(p_ist_gross))
@@ -270,7 +277,7 @@ etable(
   list("(1) Gross, no week FE" = m_gross_base,
        "(2) Net price"         = m_net_base),
   tex    = TRUE,
-  file   = "tables_latex/23_tab_gross_price_stability.tex",
+  file   = "tables_latex/21_tab_gross_price_stability.tex",
   title  = "Gross price stability during SOE: posted shelf price vs.\\ net transaction price",
   label  = "tab:gross_price_stability",
   digits = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2,
@@ -286,15 +293,15 @@ etable(
     "Standard errors clustered at the state level."
   )
 )
-message("Saved: tables_latex/23_tab_gross_price_stability.tex")
+message("Saved: tables_latex/21_tab_gross_price_stability.tex")
 
 
 # ==============================================================================
-# M3d. EXTENSIVE vs INTENSIVE DECOMPOSITION OF THE DEMAND SURGE
+# M3d. EXTENSIVE vs INTENSIVE DECOMPOSITION OF THE RISE IN QUANTITY SOLD
 # ==============================================================================
 # Following the extensive-margin logic of Butters et al. (2025): did the SOE
-# demand surge arrive through MORE purchase occasions buying produce (extensive)
-# or LARGER quantity per occasion (intensive)?
+# rise in quantity sold arrive through MORE purchase occasions buying produce
+# (extensive) or LARGER quantity per occasion (intensive)?
 #
 # A purchase occasion is a distinct basket (store x date x register x
 # transaction). We use weekly_transactions_total as the occasion count by
@@ -348,8 +355,8 @@ if (!is.null(promo_panel)) {
          "(2) Extensive: $\\ln N$"   = m_extensive,
          "(3) Intensive: $\\ln(Q/N)$" = m_intensive),
     tex    = TRUE,
-    file   = "tables_latex/25_tab_extensive_intensive.tex",
-    title  = "Extensive vs.\\ intensive decomposition of the SOE demand surge",
+    file   = "tables_latex/23_tab_extensive_intensive.tex",
+    title  = "Extensive vs.\\ intensive decomposition of the SOE-period rise in quantity sold",
     label  = "tab:extensive_intensive",
     digits = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2,
     dict   = c("SoE" = "SOE$_{st}$", "postSoE" = "Post-SOE$_{st}$"),
@@ -361,7 +368,7 @@ if (!is.null(promo_panel)) {
       "FEs: product and store. Standard errors clustered at the state level."
     )
   )
-  message("Saved: tables_latex/25_tab_extensive_intensive.tex")
+  message("Saved: tables_latex/23_tab_extensive_intensive.tex")
   
   # Figure: SOE coefficient decomposed into extensive + intensive
   decomp_coef <- tibble::tibble(
@@ -377,7 +384,7 @@ if (!is.null(promo_panel)) {
     geom_col(width = 0.6, fill = "grey70", color = "grey30") +
     geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2) +
     geom_text(aes(label = round(estimate, 3)), vjust = -0.8, size = 3.5) +
-    labs(title = "SOE demand surge: extensive vs. intensive margin",
+    labs(title = "SOE-period rise in quantity sold: extensive vs. intensive margin",
          subtitle = "Log-quantity SOE coefficient decomposed. Extensive = more purchase occasions; intensive = more per occasion.",
          x = NULL, y = "SOE coefficient (log points)") +
     theme_bw() + theme(plot.subtitle = element_text(size = 8))
@@ -386,7 +393,7 @@ if (!is.null(promo_panel)) {
   message("Saved: figures/21_fig_extensive_intensive.png")
   
   if (SAVE_CSV) {
-    write.csv(decomp_coef, "tables_csv/25_tab_extensive_intensive.csv", row.names = FALSE)
+    write.csv(decomp_coef, "tables_csv/23_tab_extensive_intensive.csv", row.names = FALSE)
   }
 }
 
@@ -394,19 +401,33 @@ message("Mechanism 3 (countercyclical promotional pricing) complete.")
 
 # ==============================================================================
 # CATEGORY-LEVEL ROBUSTNESS (substitution across varieties)
-# Append to the end of 08_demand_rotation.R (after M3d).
+# Part of 08_promotional_expansion.R (runs after M3d).
 #
 # Rebuilds the Mechanism 3 outcomes at the store-CATEGORY-week level, aggregating
 # ALL UPCs within each focal category (not just the five selected items), to test
-# whether the promotional-expansion and demand-surge results reflect substitution
+# whether the promotional-expansion and demand results reflect substitution
 # across varieties within a category.
 #
 # Requires stg.store_category_week (built by the category rollup SQL). SOE timing
 # is joined from panel_est so it is identical to the main analysis.
 #
+# --------------------------------------------------------------------------
+# ***  WHERE TO FILL IN [X] IN THE MANUSCRIPT  ***
+#   The Section 5.3 footnote reads: "...aggregating over all [X] varieties the
+#   retailers sell in these five categories." [X] = the total number of DISTINCT
+#   UPCs across all five focal categories. The rolled-up store_category_week
+#   table only stores n_upcs PER cell (per store-week), which is NOT the
+#   sample-wide distinct count, so the breadth block below queries
+#   stg.pos_weekly_presence directly and PRINTS the value to the console:
+#       ">>> [X] = total distinct UPCs across the five categories = NNN <<<"
+#   Use that NNN for [X]. (Equivalently, run the "Total distinct UPCs per
+#   category" query at the bottom of sql_category_rollup.sql and sum the five
+#   rows.)
+# --------------------------------------------------------------------------
+#
 # OUTPUTS (tables_latex/):
-#   26_tab_category_price_promo.tex   -- gross price, net price, share on sale
-#   27_tab_category_decomp.tex        -- extensive vs intensive decomposition
+#   25_tab_category_price_promo.tex   -- gross price, net price, share on sale
+#   26_tab_category_decomp.tex        -- extensive vs intensive decomposition
 # ==============================================================================
 
 message("Category-level robustness (substitution check) ...")
@@ -430,6 +451,45 @@ cat_panel <- tryCatch({
 })
 
 if (!is.null(cat_panel)) {
+  
+  # --------------------------------------------------------------------------
+  # BREADTH: total distinct UPCs across the five focal categories -> fills [X].
+  # Same source and filters as the rollup SQL's "Total distinct UPCs per
+  # category" query. Printed to the console; use the total for [X].
+  # --------------------------------------------------------------------------
+  cat_breadth <- tryCatch({
+    con_b <- open_decadata_connection()
+    # Select down each table before the join so retailer_id comes from only one
+    # side (pos_weekly_presence also carries retailer_id, which otherwise clashes
+    # and gets renamed retailer_id.x / retailer_id.y after the join).
+    pres  <- dplyr::tbl(con_b, dbplyr::in_schema("stg", "pos_weekly_presence")) %>%
+      select(store_id, upc, category)
+    sdim  <- dplyr::tbl(con_b, dbplyr::in_schema("stg", "store_dim")) %>%
+      select(store_id, retailer_id)
+    by_cat <- pres %>%
+      inner_join(sdim, by = "store_id") %>%
+      filter(retailer_id %in% c(2, 3, 5),
+             toupper(category) %in% c("BANANAS", "CABBAGE", "CUCUMBER",
+                                      "LETTUCE", "TOMATOES")) %>%
+      group_by(category = toupper(category)) %>%
+      summarise(n_upcs_total = n_distinct(upc), .groups = "drop") %>%
+      collect()
+    DBI::dbDisconnect(con_b)
+    by_cat
+  }, error = function(e) {
+    message("Breadth query failed (fill [X] from the SQL query instead): ",
+            conditionMessage(e))
+    NULL
+  })
+  
+  if (!is.null(cat_breadth)) {
+    message("Distinct UPCs per focal category (breadth actually captured):")
+    print(cat_breadth)
+    message(sprintf(
+      ">>> [X] = total distinct UPCs across the five categories = %d <<<",
+      sum(cat_breadth$n_upcs_total)))
+    message("    Fill this value in for [X] in the Section 5.3 footnote.")
+  }
   
   # SOE indicators from the main analysis (state-week level) -> identical timing
   soe_xwalk <- panel_est %>%
@@ -458,10 +518,11 @@ if (!is.null(cat_panel)) {
     print()
   
   # ----------------------------------------------------------------------------
-  # (A) Price & promotion at category grain  (mirrors Tables 22 and 23)
-  #     Gross flat + net fell + share up  ==>  promotional expansion is
-  #     category-wide, not variety-switching. share_on_sale is a transaction-
-  #     count fraction and is free of price-index composition bias.
+  # (A) Price & promotion at category grain  (mirrors Tables 21 and 22)
+  #     Net fell + share up  ==>  promotional expansion is category-wide, not
+  #     variety-switching. share_on_sale is a transaction-count fraction and is
+  #     free of price-index composition bias; the volume-weighted category gross
+  #     index can move with the variety mix and is not a clean shelf-price gauge.
   # ----------------------------------------------------------------------------
   cm_gross <- feols(p_gross_cat        ~ SoE + postSoE | category + store_id,
                     data = cat_panel, cluster = ~ sst)
@@ -478,7 +539,7 @@ if (!is.null(cat_panel)) {
          "(2) Net price"      = cm_net,
          "(3) Share on sale"  = cm_share),
     tex    = TRUE,
-    file   = "tables_latex/26_tab_category_price_promo.tex",
+    file   = "tables_latex/25_tab_category_price_promo.tex",
     title  = "Category-level robustness: gross price, net price, and promotional share",
     label  = "tab:category_price_promo",
     digits = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2,
@@ -491,13 +552,14 @@ if (!is.null(cat_panel)) {
       "FEs: category and store. Standard errors clustered at the state level."
     )
   )
-  message("Saved: tables_latex/26_tab_category_price_promo.tex")
+  message("Saved: tables_latex/25_tab_category_price_promo.tex")
   
   # ----------------------------------------------------------------------------
-  # (B) Extensive/intensive decomposition at category grain (mirrors Table 25)
+  # (B) Extensive/intensive decomposition at category grain (mirrors Table 23)
   #     Within-category variety-switching does not change the category-level
-  #     occasion count, so if the category extensive margin also rises the
-  #     surge is category breadth, not reallocation toward the focal items.
+  #     occasion count, so if the category extensive margin also rises the rise
+  #     in quantity sold is category breadth, not reallocation toward the focal
+  #     items.
   # ----------------------------------------------------------------------------
   cm_total <- feols(ln_Q  ~ SoE + postSoE | category + store_id, data = cat_panel, cluster = ~ sst)
   cm_ext   <- feols(ln_N  ~ SoE + postSoE | category + store_id, data = cat_panel, cluster = ~ sst)
@@ -516,8 +578,8 @@ if (!is.null(cat_panel)) {
          "(2) Extensive: $\\ln N$"    = cm_ext,
          "(3) Intensive: $\\ln(Q/N)$" = cm_int),
     tex    = TRUE,
-    file   = "tables_latex/27_tab_category_decomp.tex",
-    title  = "Category-level robustness: extensive vs.\\ intensive decomposition of the demand surge",
+    file   = "tables_latex/26_tab_category_decomp.tex",
+    title  = "Category-level robustness: extensive vs.\\ intensive decomposition of the rise in quantity sold",
     label  = "tab:category_decomp",
     digits = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2,
     dict   = c("SoE" = "SOE$_{st}$", "postSoE" = "Post-SOE$_{st}$"),
@@ -530,8 +592,7 @@ if (!is.null(cat_panel)) {
       "FEs: category and store. Standard errors clustered at the state level."
     )
   )
-  message("Saved: tables_latex/27_tab_category_decomp.tex")
+  message("Saved: tables_latex/26_tab_category_decomp.tex")
 }
 
 message("Category robustness complete.")
-

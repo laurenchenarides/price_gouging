@@ -770,8 +770,8 @@ g_price_step <- ggplot(step_data,
       "Step chart: weekly mean volume-weighted price across stores. ",
       "Dashed line = first SOE activation (", format(soe_first_start, "%b %d, %Y"), "). ",
       "Shaded region = SOE window.\n",
-      "Blue = posted shelf price. Red = net (transaction, after discounts). ",
-      "Green dashed = wholesale cost. Divergence of blue/red reflects deal-mix shift during the SOE."
+      "Grey = posted shelf price. Black = net (transaction, after discounts). ",
+      "Dashed = wholesale cost. Divergence of blue/red reflects deal-mix shift during the SOE."
     ),
     x        = NULL,
     y        = "Mean price / cost (nominal $ per unit or lb)",

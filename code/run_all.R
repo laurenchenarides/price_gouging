@@ -24,7 +24,7 @@
 #   05_regressions.R                   Empirical Model + Results: Retail Prices + Markups
 #   06_uniform_pricing.R               Mechanisms: Mechanism 1 (Constant Retail Prices)
 #   07_passthrough.R                   Mechanisms: Mechanism 2 (Variation in Pass-Through)
-#   08_demand_rotation.R               Mechanisms: Mechanism 3 (Countercyclical Pricing)
+#   08_promotional_expansion.R         Mechanisms: Mechanism 3 (Countercyclical Pricing)
 # ==============================================================================
 
 rm(list = ls())
@@ -58,10 +58,9 @@ source("code/02_build_panel.R")
 source("code/03_descriptive_tables.R")
 source("code/04_residual_plots.R")
 source("code/05_regressions.R")
-
 source("code/06_uniform_pricing.R")
 source("code/07_passthrough.R")
-source("code/08_demand_rotation.R")
+source("code/08_promotional_expansion.R")
 
 message("=== Analysis complete. ===")
 message("Tables (LaTeX): tables_latex/")
