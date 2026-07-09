@@ -39,10 +39,6 @@ RUN_DUR_EXTENSION <- TRUE
 # IV pass-through (07_passthrough.R, section 11a) — O(N^2)-ish distance build
 RUN_IV <- TRUE
 
-# Control-function demand bootstrap (08_demand_rotation.R, Step 5).
-# B = 200 store-cluster bootstrap replications; can take hours.
-RUN_CF_BOOTSTRAP <- TRUE
-
 # Set TRUE to also write intermediate CSV files alongside LaTeX tables.
 # LaTeX output is always produced. CSV files are optional.
 SAVE_CSV <- FALSE

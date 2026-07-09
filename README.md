@@ -24,7 +24,7 @@ All tables and figures are written to `tables_latex/` and `figures/`. See [Scrip
 
 **States:** Alabama, Florida, Georgia, Louisiana, Mississippi
 
-**Retailers:** three regional grocery chains (one retailer from original dataset is excluded: closed mid-sample)
+**Retailers:** three regional grocery chains
 
 **Period:** January 2018 – July 2023 (weekly)
 
@@ -144,7 +144,7 @@ Scripts are called in order by `run_all.R`. The table below maps each script to 
 | `05_regressions.R` | Empirical Model; Results: Retail Prices; Markups | Price and margin level regressions | Tables 08–11, Figs 08–11 |
 | `06_uniform_pricing.R` | Mechanisms: Mechanism 1 (Constant Retail Prices) | Within-chain price uniformity | Tables 15–20, Figs 14–18 |
 | `07_passthrough.R` | Mechanisms: Mechanism 2 (Variation in Pass-Through) | Pass-through regressions + duration extension | Tables 12–14, Figs 12–13 |
-| `08_demand_rotation.R` | Mechanisms: Mechanism 3 (Countercyclical Pricing) | Promo intensity, price dispersion, IV pass-through | Tables 21–24, Figs 19–21 |
+| `08_promotional_expansion.R` | Mechanisms: Mechanism 3 (Countercyclical Pricing) | Promo intensity, extensive/intensive margins | Tables 21–24, Figs 19–21 |
 
 ### Global flags (`run_all.R`)
 
@@ -153,6 +153,7 @@ Scripts are called in order by `run_all.R`. The table below maps each script to 
 | `SAVE_OPTIONAL_PLOTS` | `TRUE` | By-state and by-product residual trend plots |
 | `RETAILERS_KEEP` | `c(2, 3, 5)` | Retailers included (4 excluded) |
 | `RUN_DUR_EXTENSION` | `TRUE` | Pass-through duration extension |
+| `RUN_IV` | `TRUE` | IV pass-through |
 | `SAVE_CSV` | `FALSE` | Also write intermediate CSVs alongside LaTeX tables |
 
 ---
@@ -263,7 +264,8 @@ price_gouging/
 | `stg.date_week_index` | Week sequence to calendar date mapping | `00_read_in_data.R` |
 | `stg.pos_store_master` | Store metadata (lat/lon, state) | `00_read_in_data.R` |
 | `stg.pd_store_upc_day` | Daily loyalty-card transaction panel (built by BuildMarkupsNew_PriceDiscrimination.sql; intermediate for weekly rollup) | --- |
-| `stg.pd_store_upc_week` | Promotional pricing panel (loyalty, sale share, price dispersion) | `08_demand_rotation.R` |
+| `stg.pd_store_upc_week` | Promotional pricing panel (loyalty, sale share, price dispersion) | `08_promotional_expansion.R` |
+| `stg.pd_ext_int_week` | Distinct-basket occasion count | `08_promotional_expansion.R` |
 
 ---
 
