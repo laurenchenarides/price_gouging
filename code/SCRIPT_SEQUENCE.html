@@ -488,13 +488,15 @@ enforcement status broke uniform pricing.</p>
 <li><strong>Tables 15–16</strong> (<code>15_..._summary_retail</code>,
 <code>16_..._summary_wholesale</code>): log-diff summaries by
 period</li>
-<li><strong>Tables 17 / 17b</strong> (<code>17_..._retail_main</code>,
-<code>17b_..._retail_robust</code>): retail uniformity, main + month-FE
-robust</li>
-<li><strong>Tables 18 / 18b</strong>
+<li><strong>Tables 17 / 17b / 17c</strong>
+(<code>17_..._retail_main</code>, <code>17b_..._retail_robust</code>,
+<code>17c_..._retail_crossstate</code>): retail uniformity — main,
+month-FE robustness, cross-state (geography) control</li>
+<li><strong>Tables 18 / 18b / 18c</strong>
 (<code>18_..._wholesale_main</code>,
-<code>18b_..._wholesale_robust</code>): wholesale uniformity, main +
-month-FE robust</li>
+<code>18b_..._wholesale_robust</code>,
+<code>18c_..._wholesale_crossstate</code>): wholesale uniformity — main,
+robustness, cross-state control</li>
 <li><strong>Tables 19–20</strong> (<code>19_..._heterog_retail</code>,
 <code>20_..._heterog_wholesale</code>): retailer heterogeneity</li>
 <li><strong>Figures 14–15</strong>: pooled log-diff distributions
@@ -507,8 +509,8 @@ enforcement status</li>
 </div>
 <div id="mechanism-2-variation-in-pass-through" class="section level3">
 <h3>Mechanism 2: Variation in Pass-Through</h3>
-<p><strong><code>07_passthrough.R</code></strong> → Tables 12, 12b, 13,
-14, 24; Figures 12–13</p>
+<p><strong><code>07_passthrough.R</code></strong> → Tables 12, 12b, 12c,
+13, 14; Figures 12–13</p>
 <p>Specification:
 <code>ΔP_ist = α + β₁·Δw + β₂·(Δw×SOE) + β₃·(Δw×postSOE) + γ_j + δ_i + τ_t</code>.
 The preferred specification includes week FEs. The identifying variation
@@ -526,9 +528,11 @@ Pass-through, no week FE vs. week FE</li>
 <li><strong>Table 14</strong>
 (<code>14_tab_passthrough_implied_soe.tex</code>): Implied SOE
 pass-through at selected durations</li>
-<li><strong>Table 24</strong> (<code>24_tab_iv_passthrough.tex</code>):
-IV robustness — inverse-distance-weighted cross-state cost instrument
-<code>Z_ist</code> (from store lat/lon)</li>
+<li><strong>Table 12c</strong>
+(<code>12c_tab_iv_passthrough.tex</code>): IV robustness —
+inverse-distance-weighted cross-state cost instrument <code>Z_ist</code>
+(from store lat/lon). Runs when <code>RUN_IV = TRUE</code> and
+<code>store_info</code> has lat/lon.</li>
 <li><strong>Figure 12</strong>
 (<code>12_fig_passthrough_coef.png</code>): Coefficients, both
 specs</li>
@@ -543,33 +547,40 @@ weeks since SOE</li>
 <div id="mechanism-3-countercyclical-pricing" class="section level3">
 <h3>Mechanism 3: Countercyclical Pricing</h3>
 <p><strong><code>08_promotional_expansion.R</code></strong> → Tables
-21–23 (+ 25–27 pending); Figures 19–20 (+ 21 pending)</p>
+21–26; Figures 19–21</p>
 <p>The net price decline is a promotional-frequency phenomenon: posted
 shelf prices were flat, the share of transactions on sale rose sharply,
-and net prices fell. The script documents this channel and (pending)
-decomposes the coincident rise in quantity sold into extensive and
-intensive margins, following Butters, Sacks, and Seo (2025). Requires
-<code>stg.pd_store_upc_week</code> (run
-<code>BuildMarkupsNew_PriceDiscrimination.sql</code> first).</p>
-<p>Implemented:</p>
+and net prices fell. The script documents this channel and decomposes
+the coincident rise in quantity sold into extensive and intensive
+margins, following Butters, Sacks, and Seo (2025). Requires
+<code>stg.pd_store_upc_week</code> and <code>stg.pd_ext_int_week</code>
+(run <code>BuildMarkupsNew_PromoExpansion.sql</code> first) and, for the
+category robustness, <code>stg.store_category_week</code> (built by the
+category rollup at the end of
+<code>BuildMarkupsNew_2026_04.sql</code>).</p>
+<p>Implemented (file numbers match the order tables appear in the
+paper’s Section 6.3):</p>
 <ul>
-<li><strong>M3a</strong> (<code>21_tab_gross_net_gap.tex</code>,
+<li><strong>M3a — gross–net gap</strong>
+(<code>24_tab_gross_net_gap.tex</code>,
 <code>19_fig_gross_net_gap.png</code>): Did the per-unit promotional
 discount widen during the SOE?</li>
-<li><strong>M3b</strong> (<code>22_tab_promo_intensity.tex</code>,
+<li><strong>M3b — promotional intensity</strong>
+(<code>22_tab_promo_intensity.tex</code>,
 <code>20_fig_promo_intensity.png</code>): Did <code>share_on_sale</code>
 and discount depth change?</li>
-<li><strong>M3c</strong>
-(<code>23_tab_gross_price_stability.tex</code>): Was the posted shelf
+<li><strong>M3c — gross price stability</strong>
+(<code>21_tab_gross_price_stability.tex</code>): Was the posted shelf
 price flat while the net price fell?</li>
-<li><strong>M3d</strong> (<code>25_tab_extensive_intensive.tex</code>,
+<li><strong>M3d — extensive/intensive</strong>
+(<code>23_tab_extensive_intensive.tex</code>,
 <code>21_fig_extensive_intensive.png</code>): Decompose the SOE quantity
 increase into extensive (purchase occasions) and intensive (volume per
 occasion) margins; ln <em>Q</em> = ln <em>N</em> +
 ln(<em>Q</em>/<em>N</em>).</li>
 <li><strong>Category robustness</strong>
-(<code>26_tab_category_price_promo.tex</code>,
-<code>27_tab_category_decomp.tex</code>): Re-estimate at the
+(<code>25_tab_category_price_promo.tex</code>,
+<code>26_tab_category_decomp.tex</code>): Re-estimate at the
 store-category-week level over all UPCs in each focal category (requires
 <code>stg.store_category_week</code>).</li>
 </ul>
@@ -596,11 +607,10 @@ store-category-week level over all UPCs in each focal category (requires
 supporting tables. Run before the R scripts.</td>
 </tr>
 <tr class="even">
-<td><code>BuildMarkupsNew_PriceDiscrimination.sql</code></td>
+<td><code>BuildMarkupsNew_PromoExpansion.sql</code></td>
 <td>Builds <code>stg.pd_transactions</code>,
 <code>stg.pd_store_upc_day</code>, and
-<code>stg.pd_store_upc_week</code> for Mechanism 3. Shopper ID:
-<code>REWARD_CARD_NUMBER</code>.</td>
+<code>stg.pd_store_upc_week</code> for Mechanism 3.</td>
 </tr>
 </tbody>
 </table>
