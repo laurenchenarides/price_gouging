@@ -33,12 +33,6 @@
 #   `mixed` is separately identified from `cross_state` because cross_state = 1
 #   also occurs with mixed = 0 (cross-state Pre/During/Post pairs).
 #
-#   New outputs (17c/18c) present the raw and net-of-geography models side by
-#   side on the SAME finer-grain panel, so the only difference between columns
-#   is the cross_state control. Point estimates in 17c/18c differ slightly from
-#   Tables 17/18 because the cell grain differs; Tables 17/18 remain the primary,
-#   paper-comparable specification and are UNCHANGED by this update.
-#
 # ------------------------------------------------------------------------------
 # NOTE ON N:
 #   The collapsed pair-status panel has more rows than unique retailer-product-
@@ -60,10 +54,10 @@
 #   16_tab_uniformity_summary_wholesale.tex
 #   17_tab_uniformity_retail_main.tex
 #   17b_tab_uniformity_retail_robust.tex
-#   17c_tab_uniformity_retail_crossstate.tex      (NEW: mixed net of geography)
+#   17c_tab_uniformity_retail_crossstate.tex      
 #   18_tab_uniformity_wholesale_main.tex
 #   18b_tab_uniformity_wholesale_robust.tex
-#   18c_tab_uniformity_wholesale_crossstate.tex   (NEW: mixed net of geography)
+#   18c_tab_uniformity_wholesale_crossstate.tex   
 #   19_tab_uniformity_heterog_retail.tex
 #   20_tab_uniformity_heterog_wholesale.tex
 #

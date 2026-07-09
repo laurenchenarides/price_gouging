@@ -2,33 +2,32 @@
 \begin{table}[htbp]
    \caption{\label{tab:promo_intensity} Effect of SOE on promotional intensity: share on sale and discount depth}
    \centering
-   \begin{tabular}{lccc}
+   \begin{tabular}{lcc}
       \tabularnewline \midrule \midrule
-       & \multicolumn{2}{c}{Share on sale} & Discount depth (\$/unit) \\ 
-      Model:          & (1)           & (2)     & (3)\\  
+                      & Share on sale & Discount depth (\$/unit) \\    
+      Model:          & (1)           & (2)\\  
       \midrule
       \emph{Variables}\\
-      SOE$_{st}$      & 0.452$^{***}$ & -0.017  & 0.027$^{**}$\\   
-                      & (0.006)       & (0.009) & (0.008)\\   
-      Post-SOE$_{st}$ & 0.315$^{***}$ &         & -0.028$^{**}$\\   
-                      & (0.002)       &         & (0.008)\\   
+      SOE$_{st}$      & 0.453$^{***}$ & 0.027$^{**}$\\   
+                      & (0.006)       & (0.008)\\   
+      Post-SOE$_{st}$ & 0.315$^{***}$ & -0.028$^{**}$\\   
+                      & (0.002)       & (0.008)\\   
       \midrule
       \emph{Fixed-effects}\\
-      product         & Yes           & Yes     & Yes\\  
-      store\_id       & Yes           & Yes     & Yes\\  
-      week\_fe        &               & Yes     & \\  
+      product         & Yes           & Yes\\  
+      store\_id       & Yes           & Yes\\  
       \midrule
       \emph{Fit statistics}\\
-      Observations    & 606,546       & 606,546 & 263,894\\  
-      R$^2$           & 0.47816       & 0.55532 & 0.58082\\  
+      Observations    & 604,121       & 262,613\\  
+      R$^2$           & 0.47772       & 0.58030\\  
       \midrule \midrule
-      \multicolumn{4}{l}{\emph{Clustered (sst) standard-errors in parentheses}}\\
-      \multicolumn{4}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+      \multicolumn{3}{l}{\emph{Clustered (sst) standard-errors in parentheses}}\\
+      \multicolumn{3}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
    \end{tabular}
    
    \par \raggedright 
-   Columns (1)--(2): dependent variable is share of transactions at promotional price.\\
-   Column (3): dependent variable is regular price minus sale price, conditional on a promotion running.\\
+   Columns (1): dependent variable is share of transactions at promotional price.\\
+   Column (2): dependent variable is regular price minus sale price, conditional on a promotion running.\\
    The share-on-sale SOE effect is a common, simultaneous shift across states;\\
    week fixed effects absorb it (column 2), so column 1 is the relevant specification.\\
    FEs: product and store. Column (2) adds week FEs. Standard errors clustered at the state level.

@@ -11,7 +11,7 @@
 #
 # Prerequisites:
 #   1. Server-side SQL build completed (code/BuildMarkupsNew_2026_04.sql,
-#      then code/BuildMarkupsNew_PriceDiscrimination.sql).
+#      then code/BuildMarkupsNew_PromoExpansion.sql).
 #   2. cpi/cpi_20152025.xlsx present (BLS CPI-U, 1982-84 = 100).
 #   3. Connection details set in code/config.R and global vars.
 #
@@ -48,7 +48,7 @@ for (d in c("figures", "tables_csv", "tables_latex", "tables_latex/net_price", "
 }
 
 # ---- Configuration and global flags (edit code/config.R, not this file) ------
-source("code/config.R")
+source("code/config.R") # unable to share
 
 # ---- Run all scripts ---------------------------------------------------------
 

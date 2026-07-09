@@ -1,5 +1,5 @@
 /* ----------------------------------------------------------------------------
- * BuildMarkupsNew_PriceDiscrimination.sql
+ * BuildMarkupsNew_PromoExpansion.sql
  *
  * Purpose: Build a store-UPC-date summary table for the price discrimination
  *   mechanism (Mechanism 3). The key question is whether all shoppers pay the
@@ -297,8 +297,16 @@ SELECT
     d.store_id,
     d.retailer_id,
     d.sst,
-    d.upc,
-    d.soe_period,
+        d.upc,
+    -- Derive soe_period at the WEEK level (one value per store-upc-week),
+    -- matching the weekly overlap rule used for SoE_apg_active in store_upc_week, so
+    -- SOE boundary weeks are no longer split into two rows.
+    CASE
+        WHEN dwi.week_start <= sap.apg_end_date
+         AND DATEADD(day, 6, dwi.week_start) >= sap.apg_start_date THEN 'During SOE'
+        WHEN DATEADD(day, 6, dwi.week_start) >  sap.apg_end_date    THEN 'Post-SOE'
+        ELSE 'Pre-SOE'
+    END AS soe_period,
     dwi.week_start,
     sap.apg_start_date,
     sap.apg_end_date,
@@ -342,7 +350,7 @@ JOIN stg.date_week_index dwi
 JOIN stg.state_apg_periods sap
   ON sap.sst = d.sst
 GROUP BY
-    d.week_seq, d.store_id, d.retailer_id, d.sst, d.upc, d.soe_period,
+    d.week_seq, d.store_id, d.retailer_id, d.sst, d.upc,
     dwi.week_start, sap.apg_start_date, sap.apg_end_date;
 
 CREATE INDEX IX_pd_week_store_upc ON stg.pd_store_upc_week(store_id, upc, week_seq);
@@ -382,7 +390,6 @@ SELECT
     t.retailer_id,
     t.sst,
     t.upc,
-    t.soe_period,
     dwi.week_start,
     -- Extensive margin: distinct purchase occasions (baskets) buying this
     -- product in this store-week. Date is included in the key because
@@ -408,23 +415,32 @@ JOIN stg.date_week_index dwi
 WHERE t.soe_period IS NOT NULL
   AND t.volume > 0
 GROUP BY
-    t.week_seq, t.store_id, t.retailer_id, t.sst, t.upc, t.soe_period, dwi.week_start;
+    t.week_seq, t.store_id, t.retailer_id, t.sst, t.upc, dwi.week_start;
 
 CREATE INDEX IX_pd_ext_int_week ON stg.pd_ext_int_week(store_id, upc, week_seq);
 
--- Descriptive: extensive vs intensive by product and SOE period
+-- Descriptive: extensive vs intensive by product
 SELECT
     upc,
-    soe_period,
     COUNT(*)                               AS n_store_weeks,
     AVG(CAST(weekly_occasions AS float))   AS avg_occasions,
     AVG(vol_per_occasion)                  AS avg_vol_per_occasion,
     AVG(weekly_volume)                     AS avg_volume
 FROM stg.pd_ext_int_week
-GROUP BY upc, soe_period
-ORDER BY upc, soe_period;
+GROUP BY upc
+ORDER BY upc;
 
 -- Sanity: identity holds row-by-row (should return 0 rows)
 SELECT TOP 20 *
 FROM stg.pd_ext_int_week
 WHERE ABS(weekly_volume - weekly_occasions * vol_per_occasion) > 0.01;
+
+SELECT store_id, upc, week_seq, COUNT(*) AS n
+FROM stg.pd_store_upc_week
+GROUP BY store_id, upc, week_seq
+HAVING COUNT(*) > 1;   -- expect 0 rows
+
+SELECT store_id, upc, week_seq, COUNT(*) AS n
+FROM stg.pd_ext_int_week
+GROUP BY store_id, upc, week_seq
+HAVING COUNT(*) > 1;   -- expect 0 rows

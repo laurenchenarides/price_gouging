@@ -83,7 +83,7 @@ Specification:
 P_ist = α + β₁·SOE_st + β₂·postSOE_st + γ_j + δ_i + ε_ist
 ```
 
-Fixed effects: product (γ_j) and store (δ_i). Clustering: store level.
+Fixed effects: product (γ_j) and store (δ_i). Clustering: **state level** (G = 5), supplemented by wild cluster bootstrap inference (Webb weights, B = 9,999). (Corrected: the previous README said "store level"; the price/margin level regressions cluster at the *state* level in `05_regressions.R` and in the paper. The Mechanism 2 pass-through regressions are the ones that cluster at the *store* level.)
 
 ![Price regression coefficients](figures_repo/08_fig_price_coef_baseline.png)
 
@@ -126,7 +126,9 @@ The gross-to-net price gap — the average per-unit promotional discount — wid
 
 ![Gross-to-net price gap over time](figures_repo/19_fig_gross_net_gap.png)
 
-Promotional intensity (share on sale and discount depth) regressions are in `tables_latex/22_tab_promo_intensity.tex`. Within-store price dispersion regressions (do different shoppers pay different prices on the same day?) are in `tables_latex/23_tab_price_dispersion.tex`. IV pass-through using distance-weighted cross-market costs is in `tables_latex/24_tab_iv_passthrough.tex`.
+Promotional intensity (share on sale and discount depth) regressions are in `tables_latex/22_tab_promo_intensity.tex`. The extensive/intensive decomposition of the quantity increase (ln Q = ln N + ln(Q/N)) is in `tables_latex/23_tab_extensive_intensive.tex`. IV pass-through using distance-weighted cross-market costs is in `tables_latex/12c_tab_iv_passthrough.tex` (produced by `07_passthrough.R` when `RUN_IV = TRUE`).
+
+> Corrected from an earlier README: there is no `23_tab_price_dispersion.tex` — the within-store/within-day price-dispersion test was cut (the data contain no within-store-day price variation; see `08_promotional_expansion.R`), and file 23 is the extensive/intensive table. The IV table was renumbered from `24_` to `12c_` to remove a filename-prefix collision with `24_tab_gross_net_gap.tex`.
 
 ---
 
@@ -151,7 +153,7 @@ Scripts are called in order by `run_all.R`. The table below maps each script to 
 | Flag | Default | Effect |
 |------|---------|--------|
 | `SAVE_OPTIONAL_PLOTS` | `TRUE` | By-state and by-product residual trend plots |
-| `RETAILERS_KEEP` | `c(2, 3, 5)` | Retailers included (4 excluded) |
+| `RETAILERS_KEEP` | `c(2, 3, 5)` | Retailers included in the analysis sample (the three chains studied: Retailer 2, 3, 5) |
 | `RUN_DUR_EXTENSION` | `TRUE` | Pass-through duration extension |
 | `RUN_IV` | `TRUE` | IV pass-through |
 | `SAVE_CSV` | `FALSE` | Also write intermediate CSVs alongside LaTeX tables |
@@ -177,27 +179,29 @@ Scripts are called in order by `run_all.R`. The table below maps each script to 
 | `10_tab_margin_reg.tex` | Results: Markups | Margin level regressions |
 | `11_tab_margin_reg_state_heterog.tex` | Results: Markups | Margin effects by state |
 | `12_tab_passthrough_reg.tex` | Mechanisms: Mechanism 2 (Variation in Pass-Through) | Pass-through: no week FE vs week FE |
+| `12c_tab_iv_passthrough.tex` | Mechanism 2 | IV pass-through: OLS vs. distance-weighted cross-state cost IV |
 | `13_tab_passthrough_duration.tex` | Mechanisms: Mechanism 2 (Variation in Pass-Through) | Pass-through duration extension |
 | `14_tab_passthrough_implied_soe.tex` | Mechanisms: Mechanism 2 (Variation in Pass-Through) | Implied SOE pass-through at selected durations |
 | `15_tab_uniformity_summary_retail.tex` | Mechanisms: Mechanism 1 (Constant Retail Prices) | Retail log-diff summary by period |
 | `16_tab_uniformity_summary_wholesale.tex` | Mechanisms: Mechanism 1 (Constant Retail Prices) | Wholesale log-diff summary by period |
-| `17_tab_uniformity_retail.tex` | Mechanisms: Mechanism 1 (Constant Retail Prices) | Uniformity regressions: retail |
-| `18_tab_uniformity_wholesale.tex` | Mechanisms: Mechanism 1 (Constant Retail Prices) | Uniformity regressions: wholesale |
-| `19_tab_uniformity_heterog_retail.tex` | Mechanisms: Mechanism 1 (Constant Retail Prices) | Retailer heterogeneity: retail uniformity |
-| `20_tab_uniformity_heterog_wholesale.tex` | Mechanisms: Mechanism 1 (Constant Retail Prices) | Retailer heterogeneity: wholesale uniformity |
-| `21_tab_gross_price_stability.tex` | Mechanisms: Mechanism 3 (Countercyclical Pricing) |  |
-| `22_tab_promo_intensity.tex` | Mechanisms: Mechanism 3 (Countercyclical Pricing) | SOE effect on share on sale and discount depth |
-| `23_tab_extensive_intensive.tex` | Mechanisms: Mechanism 3 (Countercyclical Pricing) | SOE effect on within-store price dispersion |
-| `24_tab_gross_net_gap.tex` | Mechanisms: Mechanism 3 (Countercyclical Pricing) | SOE effect on gross-to-net price gap |
-| `25_tab_category_price_promo.tex` | Mechanisms: Mechanism 3 (Countercyclical Pricing) |  |
-| `26_tab_category_decomp.tex` | Mechanisms: Mechanism 3 (Countercyclical Pricing) | IV pass-through: OLS vs demand rotation IV |
+| `17_tab_uniformity_retail_main.tex`, `17b_..._robust.tex`, `17c_..._crossstate.tex` | Mechanism 1 | Retail uniformity: main, month-FE robustness, cross-state control |
+| `18_tab_uniformity_wholesale_main.tex`, `18b_..._robust.tex`, `18c_..._crossstate.tex` | Mechanism 1 | Wholesale uniformity: main, robustness, cross-state control |
+| `19_tab_uniformity_heterog_retail.tex` | Mechanism 1 | Retailer heterogeneity: retail uniformity |
+| `20_tab_uniformity_heterog_wholesale.tex` | Mechanism 1 | Retailer heterogeneity: wholesale uniformity |
+| `21_tab_gross_price_stability.tex` | Mechanism 3 | Posted shelf (gross) price vs. net transaction price |
+| `22_tab_promo_intensity.tex` | Mechanism 3 | SOE effect on share on sale and discount depth |
+| `23_tab_extensive_intensive.tex` | Mechanism 3 | Extensive vs. intensive decomposition of the quantity increase (ln Q = ln N + ln(Q/N)) |
+| `24_tab_gross_net_gap.tex` | Mechanism 3 | SOE effect on gross-to-net price gap |
+| `25_tab_category_price_promo.tex` | Mechanism 3 | Category-level robustness: gross/net price and share on sale |
+| `26_tab_category_decomp.tex` | Mechanism 3 | Category-level robustness: extensive vs. intensive decomposition |
+
 
 ### Figures (`figures/`)
 
 | File | Section | Content |
 |------|---------|---------|
 | `diag_06_cost_series.png` | Variable Construction (diagnostic) | Gross price, net price, wholesale cost over time |
-| `diag_08_price_step_by_product.png` | Variable Construction (diagnostic) | Step chart: gross, net, wholesale by product ±1 yr around SOE |
+| `diag_08_price_step_by_product_with_cost.png` | Variable Construction (diagnostic) | Step chart: gross, net, wholesale by product ±1 yr around SOE |
 | `01_fig_volume_and_prices_dual_axis.png` | Results: Descriptive Evidence | Weekly volume + nominal and real prices |
 | `02_fig_cost_weekly.png` | Results: Descriptive Evidence | Mean wholesale cost over time |
 | `03_fig_flag_cluster_stacked.png` | Results: Incidence of Price Gouging | APG flag rates: stacked bar |
@@ -218,6 +222,18 @@ Scripts are called in order by `run_all.R`. The table below maps each script to 
 | `18_fig_uniformity_heterog_coef.png` | Mechanisms: Mechanism 1 (Constant Retail Prices) | Retailer heterogeneity in uniformity |
 | `19_fig_gross_net_gap.png` | Mechanisms: Mechanism 3 (Countercyclical Pricing) | Gross-to-net price gap over time |
 | `20_fig_promo_intensity.png` | Mechanisms: Mechanism 3 (Countercyclical Pricing) | Share on sale and discount depth over time |
+| `21_fig_extensive_intensive.png` | Mechanisms: Mechanism 3 (Countercyclical Pricing) | SOE quantity rise decomposed into extensive/intensive margins |
+
+### `figures/` vs `figures_repo/`
+
+The analysis scripts write **all** generated figures to `figures/`, which is
+git-ignored (see `.gitignore`) because the full set is too large to track on
+GitHub. `figures_repo/` holds **GitHub-facing duplicates of only the figures
+embedded in this README** and is tracked in git. The README image links point to
+`figures_repo/…`. When a README-referenced figure is regenerated, copy the new
+version from `figures/` into `figures_repo/` (same filename) so the tracked copy
+stays current. `figures_repo/` currently contains the eight `NN_fig_*` panels and
+`diag_08_price_step_by_product_with_cost.png` shown above.
 
 ---
 
@@ -232,13 +248,13 @@ price_gouging/
 │   ├── 02_build_panel.R                       # Panel construction
 │   ├── 03_descriptive_tables.R                # Section 4.1
 │   ├── 04_residual_plots.R                    # TBD
-│   ├── 05_regressions.R                       # Sections 4.2 and 4.3 
-│   ├── 06_passthrough.R                       # Section 5.2
-│   ├── 07_uniform_pricing.R                   # Section 5.1
-│   ├── 08_promotional_expansion.R             # Section 5.3
+│   ├── 05_regressions.R                       # Results: prices, margins, cost
+│   ├── 06_uniform_pricing.R                   # Mechanism 1 (Section 6.1)
+│   ├── 07_passthrough.R                       # Mechanism 2 (Section 6.2)
+│   ├── 08_promotional_expansion.R             # Mechanism 3 (Section 6.3)
 ├── code/sql
 │   ├── BuildMarkupsNew_2026_04.sql             # Builds stg.store_upc_week and pos_* tables
-│   └── BuildMarkupsNew_PriceDiscrimination.sql # Builds stg.pd_store_upc_week for Mechanism 3
+│   └── BuildMarkupsNew_PromoExpansion.sql # Builds stg.pd_store_upc_week for Mechanism 3
 ├── cpi/
 │   ├── cpi_20152025.xlsx                      # BLS CPI-U (git-ignored)
 │   └── cpi_rebase.R                           # CPI diagnostic
@@ -252,7 +268,7 @@ price_gouging/
 
 ## SQL Tables
 
-`BuildMarkupsNew_2026_04.sql` builds the weekly store-product panel. `BuildMarkupsNew_PriceDiscrimination.sql` builds the transaction-level promotional pricing panel for Mechanism 3. Run these in SQL Server before sourcing R scripts.
+`BuildMarkupsNew_2026_04.sql` builds the weekly store-product panel. `BuildMarkupsNew_PromoExpansion.sql` builds the transaction-level promotional pricing panel for Mechanism 3. Run these in SQL Server before sourcing R scripts.
 
 | SQL table | Content | Used by |
 |-----------|---------|---------|
@@ -263,7 +279,7 @@ price_gouging/
 | `stg.pos_tomatoes` | Tomatoes (PLU 4087) weekly panel | `00_read_in_data.R` |
 | `stg.date_week_index` | Week sequence to calendar date mapping | `00_read_in_data.R` |
 | `stg.pos_store_master` | Store metadata (lat/lon, state) | `00_read_in_data.R` |
-| `stg.pd_store_upc_day` | Daily loyalty-card transaction panel (built by BuildMarkupsNew_PriceDiscrimination.sql; intermediate for weekly rollup) | --- |
+| `stg.pd_store_upc_day` | Daily loyalty-card transaction panel (built by BuildMarkupsNew_PromoExpansion.sql; intermediate for weekly rollup) | --- |
 | `stg.pd_store_upc_week` | Promotional pricing panel (loyalty, sale share, price dispersion) | `08_promotional_expansion.R` |
 | `stg.pd_ext_int_week` | Distinct-basket occasion count | `08_promotional_expansion.R` |
 

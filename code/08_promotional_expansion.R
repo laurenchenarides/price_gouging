@@ -7,14 +7,14 @@
 # Purpose: Mechanism 3 -- Countercyclical promotional pricing.
 #
 # --------------------------------------------------------------------------
-# SCOPE (revised):
-#   The net price decline during the SOE is a PROMOTIONAL-FREQUENCY phenomenon:
+# SCOPE:
+#   The net price decline during the SOE is due to PROMOTIONAL-FREQUENCY:
 #   posted shelf prices were flat, the share of transactions on sale rose
 #   sharply, and net prices fell. We document this channel and then decompose
 #   the coincident rise in quantity sold into extensive vs. intensive margins,
 #   following the extensive-margin logic of Butters et al. (2025).
 #
-#   CUT from the earlier version:
+#   Data limitations/outside scope:
 #     - Control-function estimation of a change in demand elasticity (the SOE
 #       elasticity change is not separately identified in a single, simultaneous
 #       emergency).
@@ -35,8 +35,7 @@
 #   panel_est    -- from 02_build_panel.R (store-product-week)
 #   promo_panel  -- from stg.pd_store_upc_week (read via SQL connection)
 #
-# OUTPUTS (tables_latex/)   [file prefixes follow the order the tables appear
-#                            in the paper: three body tables, then appendix]
+# OUTPUTS (tables_latex/)
 #   21_tab_gross_price_stability.tex   (Sec 5.3 body, table 1)
 #   22_tab_promo_intensity.tex         (Sec 5.3 body, table 2)
 #   23_tab_extensive_intensive.tex     (Sec 5.3 body, table 3)
@@ -52,14 +51,15 @@
 # DEPENDS ON: panel_est, save_tex(), SAVE_CSV
 #   Requires stg.pd_store_upc_week in SQL (run
 #   BuildMarkupsNew_PriceDiscrimination.sql first). The extensive/intensive
-#   decomposition uses weekly_transactions_total (item lines, ~ baskets for
-#   single-UPC produce); for the exact distinct-basket count, build
-#   stg.pd_ext_int_week (Section 4 of the SQL) and set USE_EXACT_OCCASIONS = TRUE.
+#   decomposition uses the exact distinct-basket occasion count
+#   (weekly_occasions from stg.pd_ext_int_week) when USE_EXACT_OCCASIONS = TRUE,
+#   which is the DEFAULT (see below). If stg.pd_ext_int_week is unavailable, set
+#   USE_EXACT_OCCASIONS = FALSE to fall back to weekly_transactions_total
+#   (item lines, ~ baskets for single-UPC produce).
 # ==============================================================================
 
 message("Estimating Mechanism 3: countercyclical promotional pricing ...")
 
-# Set TRUE if stg.pd_ext_int_week (exact distinct-basket occasions) has been built.
 if (!exists("USE_EXACT_OCCASIONS")) USE_EXACT_OCCASIONS <- TRUE
 
 # ==============================================================================
@@ -204,18 +204,17 @@ if (!is.null(promo_panel)) {
   
   etable(
     list("(1) Share, no week FE" = m_share_base,
-         "(2) Share, week FE"    = m_share_week_fe,
-         "(3) Discount depth"    = m_depth_base),
+         "(2) Discount depth"    = m_depth_base),
     tex    = TRUE,
     file   = "tables_latex/22_tab_promo_intensity.tex",
     title  = "Effect of SOE on promotional intensity: share on sale and discount depth",
     label  = "tab:promo_intensity",
     digits = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2,
     dict   = c("SoE" = "SOE$_{st}$", "postSoE" = "Post-SOE$_{st}$"),
-    headers = list("Share on sale" = 2, "Discount depth (\\$/unit)" = 1),
+    headers = list("Share on sale" = 1, "Discount depth (\\$/unit)" = 1),
     notes = c(
-      "Columns (1)--(2): dependent variable is share of transactions at promotional price.",
-      "Column (3): dependent variable is regular price minus sale price, conditional on a promotion running.",
+      "Columns (1): dependent variable is share of transactions at promotional price.",
+      "Column (2): dependent variable is regular price minus sale price, conditional on a promotion running.",
       "The share-on-sale SOE effect is a common, simultaneous shift across states;",
       "week fixed effects absorb it (column 2), so column 1 is the relevant specification.",
       "FEs: product and store. Column (2) adds week FEs. Standard errors clustered at the state level."
@@ -304,10 +303,10 @@ message("Saved: tables_latex/21_tab_gross_price_stability.tex")
 # (extensive) or LARGER quantity per occasion (intensive)?
 #
 # A purchase occasion is a distinct basket (store x date x register x
-# transaction). We use weekly_transactions_total as the occasion count by
-# default (item lines ~ baskets for single-UPC produce). Set
-# USE_EXACT_OCCASIONS = TRUE to use the exact distinct-basket count
-# (weekly_occasions from stg.pd_ext_int_week).
+# transaction). By default (USE_EXACT_OCCASIONS = TRUE) we use the exact
+# distinct-basket count (weekly_occasions from stg.pd_ext_int_week). Set
+# USE_EXACT_OCCASIONS = FALSE to fall back to weekly_transactions_total
+# (item lines ~ baskets for single-UPC produce) when that table is unavailable.
 #
 # Identity: ln Q = ln(occasions) + ln(volume per occasion), so the SOE
 # coefficients satisfy  beta_Q = beta_extensive + beta_intensive.

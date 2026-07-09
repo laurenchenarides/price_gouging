@@ -38,7 +38,7 @@
 #
 # Outputs (tables_latex/):
 #   12_tab_passthrough_reg.tex
-#   24_tab_iv_passthrough.tex
+#   12c_tab_iv_passthrough.tex           
 #   13_tab_passthrough_duration.tex      (if RUN_DUR_EXTENSION)
 #   14_tab_passthrough_implied_soe.tex   (if RUN_DUR_EXTENSION)
 #
@@ -176,6 +176,12 @@ if (RUN_IV && all(c("lat", "lon") %in% names(store_info))) {
     select(store_id, product, week_seq, dW, sst, latitude, longitude) %>%
     distinct()
   
+  # ---------------------------------------------------------------------------
+  #   The join below matches only on (product, week_seq) and then keeps 
+  #   sst_i != sst_j, so it pools cost changes across ALL chains,
+  #   If the intended instrument is within-chain, add retailer_id to 
+  #  `dw_store_week` and to the join key (or filter retailer_i == retailer_j). 
+  # ---------------------------------------------------------------------------
   iv_raw <- dw_store_week %>%
     rename(lat_i = latitude, lon_i = longitude, sst_i = sst) %>%
     inner_join(
@@ -220,7 +226,7 @@ if (RUN_IV && all(c("lat", "lon") %in% names(store_info))) {
   etable(
     list("(1) OLS" = m_ols_iv_sample, "(2) IV" = m_iv),
     tex    = TRUE,
-    file   = "tables_latex/24_tab_iv_passthrough.tex",
+    file   = "tables_latex/12c_tab_iv_passthrough.tex", 
     title  = "Pass-through: OLS vs IV",
     label  = "tab:iv_passthrough",
     digits = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2 + ivf,
@@ -241,7 +247,7 @@ if (RUN_IV && all(c("lat", "lon") %in% names(store_info))) {
       "FEs: product, store, week. Standard errors clustered at the state level."
     )
   )
-  message("Saved: tables_latex/24_tab_iv_passthrough.tex")
+  message("Saved: tables_latex/12c_tab_iv_passthrough.tex")
   
 } else if (!RUN_IV) {
   message("RUN_IV = FALSE: skipping IV pass-through.")

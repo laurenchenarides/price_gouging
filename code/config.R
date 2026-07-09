@@ -27,10 +27,12 @@ open_decadata_connection <- function() {
 # Useful for appendix or seminar materials.
 SAVE_OPTIONAL_PLOTS <- TRUE
 
-# Retailers included in the analysis sample.
-# Retailer 1 is excluded on the SQL side (see BuildMarkupsNew_2026_04.sql);
-# Retailer 4 is excluded here because its data end 2021-04-12 (closed mid-sample).
-# Keep this wording in sync with the paper's data section.
+# Retailers included in the analysis sample: the three chains studied in the
+# paper, referred to as Retailer 2, Retailer 3, and Retailer 5.
+#   - Retailer 1 is dropped upstream in the SQL build (retailer_id <> 1 in
+#     BuildMarkupsNew_2026_04.sql), so it never reaches R.
+#   - Retailer 4 is not in RETAILERS_KEEP because its transactions end 2021-04-12
+#     and do not span the full 2018-2023 study window.
 RETAILERS_KEEP <- c(2, 3, 5)
 
 # Set to TRUE to run the pass-through duration extension (07_passthrough.R)

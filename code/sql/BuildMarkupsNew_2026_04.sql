@@ -298,7 +298,7 @@ SELECT count(*) FROM stg.pos_core;
  * ======================================================== */
 
 -- Sale frequency by retailer for the five focal items
--- Scope: retailer_id <> 1, stores in NC and SC only
+-- Scope: retailer_id <> 1 and NC/SC EXCLUDED
 -- Items: four PLUs (bananas, tomatoes, cucumbers, peppers) and the lettuce UPC
 
 SELECT
@@ -314,11 +314,11 @@ JOIN stg.store_dim sd
 WHERE sd.retailer_id <> 1
   AND sd.sst NOT IN ('NC', 'SC')
   AND pc.upc IN (
-      '4011',   -- bananas
-      '4087',   -- tomatoes
-      '4062',   -- cucumbers
-      '4065',   -- peppers (confirm this PLU)
-      '7143001065'  -- replace with the actual lettuce UPC
+      '4011',       -- bananas
+      '4087',       -- tomatoes
+      '4062',       -- cucumbers
+      '4065',       -- peppers (exploratory only; not a final focal item)
+      '7143001065'  -- lettuce (Dole Shredded Lettuce 8 oz; confirmed focal UPC)
   )
 GROUP BY
     sd.retailer_id,
@@ -1362,9 +1362,8 @@ IF OBJECT_ID('stg.store_upc_week','U') IS NOT NULL
 -- sale_share
 -- Computes the share of transactions flagged as on-sale at the store-UPC-week level.
 -- share_on_sale is a transaction-count-based measure: transactions on sale divided by
--- total transactions. It is carried through as a diagnostic variable to assess whether
--- deal frequency shifts systematically during the SOE period, which would bias
--- p_ijst_net relative to p_ijst_gross.
+-- total transactions. It is carried through so the analysis can document how deal
+-- frequency shifts during the SOE period.
 
 -- agg
 -- Joins store, category, calendar, and APG metadata onto the weekly UPC aggregates.
@@ -1500,8 +1499,8 @@ SELECT
     END AS p_ijst_net,
     -- Gross price: posted shelf revenue divided by volume.
     -- Strips out promotional discounts; closer to the shelf price a non-deal
-    -- customer would face. Use as the primary price variable in main regressions;
-    -- p_ijst_net serves as a robustness check.
+    -- customer would face. p_ijst_gross is
+    -- used for the Mechanism 3 gross-vs-net comparison.
     CASE 
         WHEN a.upc_week_volume > 0 
         THEN a.upc_week_gross_sales / a.upc_week_volume

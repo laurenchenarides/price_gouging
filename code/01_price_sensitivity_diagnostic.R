@@ -10,10 +10,7 @@
 #
 # Key motivation: share of transactions on sale was higher during the SOE
 # (~30%) than pre-SOE (~8%), which means p_ist_net is pulled down more
-# during the SOE than in other periods. This creates a mechanical downward
-# bias in p_ist_net during the SOE relative to p_ist_gross, and may
-# overstate the price decline during the emergency period.
-#
+# during the SOE than in other periods.
 #
 # Outputs:
 #   tables_csv/diag_01_sale_share_by_period.csv
@@ -771,7 +768,7 @@ g_price_step <- ggplot(step_data,
       "Dashed line = first SOE activation (", format(soe_first_start, "%b %d, %Y"), "). ",
       "Shaded region = SOE window.\n",
       "Grey = posted shelf price. Black = net (transaction, after discounts). ",
-      "Dashed = wholesale cost. Divergence of blue/red reflects deal-mix shift during the SOE."
+      "Dashed = wholesale cost. Divergence of grey/black reflects deal-mix shift during the SOE."
     ),
     x        = NULL,
     y        = "Mean price / cost (nominal $ per unit or lb)",

@@ -10,3 +10,4 @@ images/
 
 *.rds
 *.xlsx
+code/config.R

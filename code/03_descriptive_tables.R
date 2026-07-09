@@ -188,6 +188,15 @@ ggsave("figures/02_fig_cost_weekly.png", g_cost_weekly,
 message("Saved: figures/02_fig_cost_weekly.png")
 
 # -- DecaData coverage by year --
+panel_est %>%
+  group_by(store_id) %>%
+  summarise(
+    first_year = min(as.integer(format(week_start, "%Y")), na.rm = TRUE),
+    last_year  = max(as.integer(format(week_start, "%Y")), na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  count(first_year)
+
 tab_decadata_raw <- panel_est %>%
   mutate(year = as.integer(format(week_start, "%Y"))) %>%
   group_by(year) %>%
@@ -198,6 +207,7 @@ tab_decadata_raw <- panel_est %>%
     .groups   = "drop"
   ) %>%
   arrange(year) %>%
+  mutate(year = as.character(year)) %>%
   rename(
     Year                  = year,
     Banners               = n_banners,
@@ -226,6 +236,7 @@ tab_decadata_wide <- panel_est %>%
   pivot_wider(names_from = sst, values_from = n_stores, values_fill = 0) %>%
   mutate(Total = rowSums(across(where(is.numeric) & !c(year)), na.rm = TRUE)) %>%
   arrange(year, retailer_id) %>%
+  mutate(year = as.character(year)) %>%
   rename(Year = year, Retailer = retailer_id)
 
 if (SAVE_CSV) write.csv(tab_decadata_wide, "tables_csv/02_tab_decadata_summary_wide.csv", row.names = FALSE)
@@ -286,7 +297,7 @@ if (SAVE_CSV) write.csv(tab_product_raw, "tables_csv/03_tab_product_coverage.csv
 save_tex(
   kbl(tab_product_raw,
       format = "latex", booktabs = TRUE,
-      caption = "Coverage and sales for the five fresh produce categories, 2018--2022. Coverage is the share of store-product-weeks with positive sales. Average price is in nominal dollars per unit or pound. Volume units: pounds (bananas, cabbage, cucumbers, tomatoes) and 8~oz bags (lettuce).",
+      caption = "Coverage and sales for the five fresh produce categories, 2018--2023. Coverage is the share of store-product-weeks with positive sales. Average price is in nominal dollars per unit or pound. Volume units: pounds (bananas, cabbage, cucumbers, tomatoes) and 8~oz bags (lettuce).",
       label   = "product_coverage",
       align   = "lrrr",
       format.args = list(big.mark = ",")) %>%
@@ -643,7 +654,7 @@ sumstat_notes <- paste0(
   "\\vspace{0.5em}\n",
   "\\begin{minipage}{\\linewidth}\n",
   "\\footnotesize\n",
-  "\\textit{Notes:} Statistics computed at the store--product--week level over 2019--2022. ",
+  "\\textit{Notes:} Statistics computed at the store--product--week level over 2018--2023. ",
   "Prices and costs are in dollars per unit or per pound depending on whether the item is sold by count or weight. ",
   "$\\Delta p_{ist}$ and $\\Delta w_{ist}$ are weekly first differences of the corresponding levels. ",
   "$SoE_{st}$ equals one in weeks when a COVID-19 state of emergency (and associated APG protections) is active in state $s$, zero otherwise. ",
@@ -665,7 +676,7 @@ save_tex(
     kable_styling(latex_options = c("hold_position", "scale_down")) %>%
     footnote(
       general = c(
-        "Statistics computed at the store--product--week level over 2019--2022.",
+        "Statistics computed at the store--product--week level over 2018--2023.",
         "Prices and costs are in dollars per unit or per pound.",
         "$\\\\Delta p_{ist}$ and $\\\\Delta w_{ist}$ are weekly first differences.",
         "$SoE_{st}$ equals one when a COVID-19 state of emergency is active in state $s$.",
