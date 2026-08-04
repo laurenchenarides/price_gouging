@@ -40,7 +40,7 @@ Raw DecaData tables are staged into an analysis-ready panel through a sequence o
  
 ### Access and documentation
  
-An interactive entity-relationship schema for DecaData is available at [dbdocs.io/decadata](https://dbdocs.io/Lauren Chenarides/decadata). Data access requires a DecaData.io license; the underlying transaction data cannot be redistributed.
+An interactive entity-relationship schema for DecaData is available at [dbdocs.io/decadata](<https://dbdocs.io/Lauren%20Chenarides/decadata?view=relationships>). Data access requires a DecaData.io license; the underlying transaction data cannot be redistributed.
  
 ### Known limitations
  
