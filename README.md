@@ -18,7 +18,39 @@ All tables and figures are written to `tables_latex/` and `figures/`. See [Scrip
 
 ---
 
-## Data and Empirical Setting
+## Data Overview
+ 
+DecaData is a proprietary point-of-sale (POS) transaction dataset product from DecaData.io. Records are item-level retail transactions linked to loyalty cardholders, which allows the same underlying data to support both store-level aggregate analysis (prices, volumes, margins by store-product-week) and shopper-level analysis (purchase histories by individual loyalty cardholder). Coverage spans multiple retail chains and banners across a range of U.S. geographies, with data extracts typically licensed for a defined set of retailers, states, and time periods. Item-level fields include both packaged goods (identified by UPC/SKU) and random-weight products (identified by PLU), along with associated wholesale cost and inventory data.
+ 
+### Core variables
+ 
+For each store-product-week observation, DecaData supports construction of:
+ 
+- **Net price** (`p_ist`): volume-weighted actual transaction price (total net sales / total volume). Reflects the sale price when a product is purchased on promotion, and the regular shelf price otherwise. This is the primary retail price outcome used in the analysis.
+- **Gross price** (`p_ist_gross`): volume-weighted posted shelf price (total posted shelf revenue / total volume). Does not reflect promotional discounts.
+- **Wholesale cost** (`w_ist`): volume-weighted unit cost (total cost / total volume).
+- **Dollar margin** (`m_ist`): `p_ist - w_ist`.
+- **Volume**: total units sold.
+
+Transaction-level fields available prior to aggregation include retail price, sale price (if applicable), wholesale cost, units sold or item weight, back-of-store inventory, and case shipments received.
+ 
+### Data structure
+ 
+Raw DecaData tables are staged into an analysis-ready panel through a sequence of SQL views/tables. The final table is a store-product-week panel used in the main regressions. Two additional data frames are constructed separately for shopper-level and transaction-level analyses (loyalty-card-product-week and transaction-level panels, respectively).
+ 
+### Access and documentation
+ 
+An interactive entity-relationship schema for DecaData is available at [dbdocs.io/decadata](https://dbdocs.io/Lauren Chenarides/decadata). Data access requires a DecaData.io license; the underlying transaction data cannot be redistributed.
+ 
+### Known limitations
+ 
+- DecaData reflects transactions for a single retail chain; results should not be interpreted as representative of all grocery retailers.
+- Wholesale cost data capture one input cost (procurement cost) and do not include labor, logistics, or other operating costs, which are not separately observed.
+- Store coverage is not constant across the sample period; store attrition (concentrated in two banners across two years) affects panel balance in some specifications.
+ 
+---
+
+## Empirical Setting
 
 **Products:** bananas (PLU 4011), cabbage (PLU 4069), cucumbers (PLU 4062), lettuce (UPC 7143001065), tomatoes (PLU 4087)
 

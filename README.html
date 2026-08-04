@@ -374,8 +374,76 @@ directory automatically), then:</p>
 below for what each script produces.</p>
 <hr />
 </div>
-<div id="data-and-empirical-setting" class="section level2">
-<h2>Data and Empirical Setting</h2>
+<div id="data-overview" class="section level2">
+<h2>Data Overview</h2>
+<p>DecaData is a proprietary point-of-sale (POS) transaction dataset
+product from DecaData.io. Records are item-level retail transactions
+linked to loyalty cardholders, which allows the same underlying data to
+support both store-level aggregate analysis (prices, volumes, margins by
+store-product-week) and shopper-level analysis (purchase histories by
+individual loyalty cardholder). Coverage spans multiple retail chains
+and banners across a range of U.S. geographies, with data extracts
+typically licensed for a defined set of retailers, states, and time
+periods. Item-level fields include both packaged goods (identified by
+UPC/SKU) and random-weight products (identified by PLU), along with
+associated wholesale cost and inventory data.</p>
+<div id="core-variables" class="section level3">
+<h3>Core variables</h3>
+<p>For each store-product-week observation, DecaData supports
+construction of:</p>
+<ul>
+<li><strong>Net price</strong> (<code>p_ist</code>): volume-weighted
+actual transaction price (total net sales / total volume). Reflects the
+sale price when a product is purchased on promotion, and the regular
+shelf price otherwise. This is the primary retail price outcome used in
+the analysis.</li>
+<li><strong>Gross price</strong> (<code>p_ist_gross</code>):
+volume-weighted posted shelf price (total posted shelf revenue / total
+volume). Does not reflect promotional discounts.</li>
+<li><strong>Wholesale cost</strong> (<code>w_ist</code>):
+volume-weighted unit cost (total cost / total volume).</li>
+<li><strong>Dollar margin</strong> (<code>m_ist</code>):
+<code>p_ist - w_ist</code>.</li>
+<li><strong>Volume</strong>: total units sold.</li>
+</ul>
+<p>Transaction-level fields available prior to aggregation include
+retail price, sale price (if applicable), wholesale cost, units sold or
+item weight, back-of-store inventory, and case shipments received.</p>
+</div>
+<div id="data-structure" class="section level3">
+<h3>Data structure</h3>
+<p>Raw DecaData tables are staged into an analysis-ready panel through a
+sequence of SQL views/tables. The final table is a store-product-week
+panel used in the main regressions. Two additional data frames are
+constructed separately for shopper-level and transaction-level analyses
+(loyalty-card-product-week and transaction-level panels,
+respectively).</p>
+</div>
+<div id="access-and-documentation" class="section level3">
+<h3>Access and documentation</h3>
+<p>An interactive entity-relationship schema for DecaData is available
+at <a href="https://dbdocs.io/Lauren%20Chenarides/decadata">dbdocs.io/decadata</a>.
+Data access requires a DecaData.io license; the underlying transaction
+data cannot be redistributed.</p>
+</div>
+<div id="known-limitations" class="section level3">
+<h3>Known limitations</h3>
+<ul>
+<li>DecaData reflects transactions for a single retail chain; results
+should not be interpreted as representative of all grocery
+retailers.</li>
+<li>Wholesale cost data capture one input cost (procurement cost) and do
+not include labor, logistics, or other operating costs, which are not
+separately observed.</li>
+<li>Store coverage is not constant across the sample period; store
+attrition (concentrated in two banners across two years) affects panel
+balance in some specifications.</li>
+</ul>
+<hr />
+</div>
+</div>
+<div id="empirical-setting" class="section level2">
+<h2>Empirical Setting</h2>
 <p><strong>Products:</strong> bananas (PLU 4011), cabbage (PLU 4069),
 cucumbers (PLU 4062), lettuce (UPC 7143001065), tomatoes (PLU 4087)</p>
 <p><strong>States:</strong> Alabama, Florida, Georgia, Louisiana,
