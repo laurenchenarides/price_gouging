@@ -20,7 +20,7 @@ All tables and figures are written to `tables_latex/` and `figures/`. See [Scrip
 
 ## Data Overview
  
-DecaData is a proprietary point-of-sale (POS) transaction dataset product from DecaData.io. Records are item-level retail transactions linked to loyalty cardholders, which allows the same underlying data to support both store-level aggregate analysis (prices, volumes, margins by store-product-week) and shopper-level analysis (purchase histories by individual loyalty cardholder). Coverage spans multiple retail chains and banners across a range of U.S. geographies, with data extracts typically licensed for a defined set of retailers, states, and time periods. Item-level fields include both packaged goods (identified by UPC/SKU) and random-weight products (identified by PLU), along with associated wholesale cost and inventory data.
+[DecaData](https://decadata.io/) is a proprietary point-of-sale (POS) transaction dataset product from DecaData.io. Records are item-level retail transactions linked to loyalty cardholders, which allows the same underlying data to support both store-level aggregate analysis (prices, volumes, margins by store-product-week) and shopper-level analysis (purchase histories by individual loyalty cardholder). Coverage spans multiple retail chains and banners across a range of U.S. geographies, with data extracts typically licensed for a defined set of retailers, states, and time periods. Item-level fields include both packaged goods (identified by UPC/SKU) and random-weight products (identified by PLU), along with associated wholesale cost and inventory data.
  
 ### Core variables
  
