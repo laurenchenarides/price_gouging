@@ -6,7 +6,7 @@
 # Chenarides, Richards, and Dong
 #
 # Master script. Source this file to reproduce all tables and figures.
-# Open pg_project.Rproj in RStudio before running ??? it sets the working
+# Open pg_project.Rproj in RStudio before running; it sets the working
 # directory to the project root automatically.
 #
 # Prerequisites:

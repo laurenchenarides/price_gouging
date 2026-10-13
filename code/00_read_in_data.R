@@ -149,4 +149,6 @@ print(table(panel_upc_week$SoE, useNA = "always"))
 #saveRDS(panel_upc_week, "data/panel_upc_week_raw.rds")
 #message("Saved: data/panel_upc_week_raw.rds")
 
+message("Read in data complete.")
+
 

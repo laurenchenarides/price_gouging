@@ -460,57 +460,76 @@ message("Saved: tables_latex/12b_tab_passthrough_log.tex")
 # M2e. ROBUSTNESS REQUESTED IN REVIEW (Sept 2026 comments)
 # ==============================================================================
 # Preferred specification (week FEs, store clustering), re-estimated on:
-#   (2) Non-promotional weeks: the current AND previous week both have no
-#       transactions at a promotional price, so dP is a shelf-price change.
-#       Tests whether the SOE attenuation is a separate channel from the rise
-#       in promotions (Tim's isomorphism point; Claude Major 2). If the
-#       attenuation disappears here, Mechanisms 2 and 3 are the same mechanism.
-#   (3) Posted shelf (gross) price change on the full sample.
-#   (4) Excluding bananas (Claude Major 5).
-#   (5)-(6) Post-SOE window capped at 26 / 52 weeks after expiry (Claude Major 3).
+#   (2) Posted shelf (gross) price change, full sample. This is the main test
+#       of whether the SOE attenuation is a separate channel from the rise in
+#       promotions (Tim's isomorphism point; Claude Major 2). If shelf-price
+#       pass-through did not fall during the SOE, the net-price attenuation
+#       comes from promotions and Mechanisms 2 and 3 are the same mechanism.
+#       If it also fell, retailers absorbed costs on the shelf price as well.
+#   (3)-(4) Non-promotional weeks, restricted to PT_NONPROMO_PRODUCTS (default
+#       bananas and lettuce). Column (4) keeps weeks where the current AND
+#       previous week had no promotional transactions, so dP is a shelf-price
+#       change; column (3) is the same products on all weeks, for comparison.
+#       The check is limited to these products because during the SOE 90-95% of
+#       store-weeks for cabbage, cucumbers, and tomatoes had a promotion: only
+#       about 4-8% of their SOE weeks survive the filter, and a pooled
+#       non-promotional sample would be mostly bananas and lettuce during the
+#       SOE but all five products before it (a product-mix change, not a
+#       promotion effect). Promotions apply store-wide, so a week's promotion
+#       share is either zero or large; loosening the threshold barely helps.
+#   (5) Excluding bananas (Claude Major 5).
+#   (6)-(7) Post-SOE window capped at 26 / 52 weeks after expiry (Claude Major 3).
 #
 # PT_NONPROMO_MAX_SHARE sets the promotion-share threshold for "non-promotional"
 # (default 0 = strictly no promotional transactions in either week).
 # ==============================================================================
 
 if (!exists("PT_NONPROMO_MAX_SHARE")) PT_NONPROMO_MAX_SHARE <- 0
+if (!exists("PT_NONPROMO_PRODUCTS"))  PT_NONPROMO_PRODUCTS  <- c("bananas", "lettuce")
 
-pt_nonpromo <- pt_data %>%
-  filter(is.finite(share_on_sale), is.finite(share_on_sale_lag),
-         share_on_sale     <= PT_NONPROMO_MAX_SHARE,
-         share_on_sale_lag <= PT_NONPROMO_MAX_SHARE)
+pt_data <- pt_data %>%
+  mutate(nonpromo = is.finite(share_on_sale) & is.finite(share_on_sale_lag) &
+           share_on_sale     <= PT_NONPROMO_MAX_SHARE &
+           share_on_sale_lag <= PT_NONPROMO_MAX_SHARE)
 
-# How much of each period survives the non-promotional filter
+# How much of each product-period survives the non-promotional filter
 pt_nonpromo_coverage <- pt_data %>%
   mutate(period = case_when(SoE == 1L ~ "During SOE", postSoE == 1L ~ "Post-SOE",
-                            TRUE ~ "Pre-SOE"),
-         nonpromo = is.finite(share_on_sale) & is.finite(share_on_sale_lag) &
-           share_on_sale <= PT_NONPROMO_MAX_SHARE &
-           share_on_sale_lag <= PT_NONPROMO_MAX_SHARE) %>%
-  group_by(period) %>%
+                            TRUE ~ "Pre-SOE")) %>%
+  group_by(product, period) %>%
   summarise(n_all = n(), n_nonpromo = sum(nonpromo),
-            share_kept = n_nonpromo / n_all, .groups = "drop")
-message("Non-promotional pass-through sample by period:")
-print(pt_nonpromo_coverage)
+            share_kept = round(n_nonpromo / n_all, 3), .groups = "drop")
+message("Non-promotional pass-through sample by product and period:")
+print(pt_nonpromo_coverage, n = Inf)
+
+pt_np_products <- pt_data %>%
+  filter(as.character(product) %in% PT_NONPROMO_PRODUCTS) %>%
+  mutate(product = droplevels(product))
 
 pt_cap <- function(cap) pt_data %>% filter(postSoE == 0L | (!is.na(k_end) & k_end <= cap))
 
 PT_FML <- dP ~ dW + dW:SoE + dW:postSoE | product + store_id + week_fe
 
+np_label <- paste(tools::toTitleCase(PT_NONPROMO_PRODUCTS), collapse = " + ")
+np_short <- paste(toupper(substr(PT_NONPROMO_PRODUCTS, 1, 1)), collapse = "+")
+
 pt_robust <- list(
-  "(1) Baseline"            = m_pt_with_fe,
-  "(2) Non-promo weeks"     = feols(PT_FML, data = pt_nonpromo, cluster = ~ store_id),
-  "(3) Shelf price"         = feols(dP_gross ~ dW + dW:SoE + dW:postSoE |
-                                      product + store_id + week_fe,
-                                    data = pt_data %>% filter(is.finite(dP_gross)),
-                                    cluster = ~ store_id),
-  "(4) Excl. bananas"       = feols(PT_FML,
-                                    data = pt_data %>% filter(product != "bananas") %>%
-                                      mutate(product = droplevels(product)),
-                                    cluster = ~ store_id),
-  "(5) Post $\\leq$ 26 wk"  = feols(PT_FML, data = pt_cap(26L), cluster = ~ store_id),
-  "(6) Post $\\leq$ 52 wk"  = feols(PT_FML, data = pt_cap(52L), cluster = ~ store_id)
+  "(1) Baseline"   = m_pt_with_fe,
+  "(2) Shelf price" = feols(dP_gross ~ dW + dW:SoE + dW:postSoE |
+                              product + store_id + week_fe,
+                            data = pt_data %>% filter(is.finite(dP_gross)),
+                            cluster = ~ store_id),
+  "(3) all weeks"      = feols(PT_FML, data = pt_np_products, cluster = ~ store_id),
+  "(4) non-promo"      = feols(PT_FML, data = pt_np_products %>% filter(nonpromo),
+                                cluster = ~ store_id),
+  "(5) Excl. bananas" = feols(PT_FML,
+                              data = pt_data %>% filter(product != "bananas") %>%
+                                mutate(product = droplevels(product)),
+                              cluster = ~ store_id),
+  "(6) Post $\\leq$ 26 wk" = feols(PT_FML, data = pt_cap(26L), cluster = ~ store_id),
+  "(7) Post $\\leq$ 52 wk" = feols(PT_FML, data = pt_cap(52L), cluster = ~ store_id)
 )
+names(pt_robust)[3:4] <- paste0(c("(3) ", "(4) "), np_short, ", ", c("all weeks", "non-promo"))
 
 etable(pt_robust)
 
@@ -518,7 +537,7 @@ etable(
   pt_robust,
   tex     = TRUE,
   file    = "tables_latex/12d_tab_passthrough_robust.tex",
-  title   = "Pass-through: non-promotional weeks, shelf price, excluding bananas, and capped post-SOE windows",
+  title   = "Pass-through: shelf price, non-promotional weeks, excluding bananas, and capped post-SOE windows",
   label   = "tab:passthrough_robust",
   digits  = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2,
   dict    = c(
@@ -527,11 +546,12 @@ etable(
     "dW:postSoE" = "$\\Delta w_{ist} \\times postSOE_{st}$"
   ),
   notes   = c(
-    "Dependent variable: $\\Delta p_{ist}$ (net price) in all columns except (3), which uses the",
+    "Dependent variable: $\\Delta p_{ist}$ (net price) in all columns except (2), which uses the",
     "change in the posted shelf (gross) price. Column (1) reproduces Table~\\ref{tab:passthrough_reg}, column (2).",
-    "Column (2) keeps store-product-weeks where neither the current nor the previous week had",
-    "any transactions at a promotional price. Column (4) drops bananas. Columns (5) and (6) keep",
-    "only the first 26 or 52 weeks after each state's SOE expired.",
+    sprintf("Columns (3) and (4) use %s only (%s); column (4) keeps store-product-weeks where neither", tolower(np_label), np_short),
+    "the current nor the previous week had any transactions at a promotional price. The other products",
+    "had a promotion in 90--95\\% of store-weeks during the SOE, too few non-promotional weeks to estimate.",
+    "Column (5) drops bananas. Columns (6) and (7) keep only the first 26 or 52 weeks after each state's SOE expired.",
     "Fixed effects: product, store, and week. Standard errors clustered at the store level."
   )
 )

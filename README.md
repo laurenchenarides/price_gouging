@@ -211,6 +211,7 @@ Each script sets a default if the variable is not already defined, so any of the
 |---------|--------|---------|--------|
 | `UNIF_WEIGHT_BY_PAIRS` | `06` | `FALSE` | Weight uniformity cells by number of store pairs |
 | `PT_NONPROMO_MAX_SHARE` | `07` | `0` | Maximum promotion share for a week to count as non-promotional |
+| `PT_NONPROMO_PRODUCTS` | `07` | `c("bananas", "lettuce")` | Products used for the non-promotional-weeks pass-through check |
 | `USE_EXACT_OCCASIONS` | `08` | `TRUE` | Use distinct-basket counts (`stg.pd_ext_int_week`) for the extensive margin |
 | `ELAS_CLUSTER` | `09` | `~ store_id` | Clustering for the elasticity regressions |
 | `ELAS_USE_HAUSMAN_IV` | `09` | `TRUE` | Estimate the within-chain out-of-state price IV |
@@ -252,7 +253,7 @@ Each script sets a default if the variable is not already defined, so any of the
 | `12_tab_passthrough_reg.tex` | Mechanisms: Mechanism 2 (Variation in Pass-Through) | Pass-through: no week FE vs week FE |
 | `12b_tab_passthrough_log.tex` | Mechanism 2 | Pass-through in logs (robustness) |
 | `12c_tab_iv_passthrough.tex` | Mechanism 2 | IV pass-through: OLS vs. distance-weighted cross-state cost IV |
-| `12d_tab_passthrough_robust.tex` | Mechanism 2 | Pass-through: non-promotional weeks, shelf price, excluding bananas, capped post-SOE windows |
+| `12d_tab_passthrough_robust.tex` | Mechanism 2 | Pass-through: shelf price, non-promotional weeks (bananas and lettuce), excluding bananas, capped post-SOE windows |
 | `13_tab_passthrough_duration.tex` | Mechanisms: Mechanism 2 (Variation in Pass-Through) | Pass-through duration extension |
 | `14_tab_passthrough_implied_soe.tex` | Mechanisms: Mechanism 2 (Variation in Pass-Through) | Implied SOE pass-through at selected durations |
 | `15_tab_uniformity_summary_retail.tex` | Mechanisms: Mechanism 1 (Constant Retail Prices) | Retail log-diff summary by period |
