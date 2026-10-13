@@ -2,10 +2,10 @@
 # 02_build_panel.R
 #
 # Purpose: Build the estimation panel from the raw SQL pull.
-#   1.  Data corrections and primary price variable assignment
-#   2.  CPI deflation and variable construction
-#   3.  SOE timing, duration, and event-time indices
-#   4.  Weekly first differences and outlier trimming
+#   2.1  Data corrections and primary price variable assignment
+#   2.2  CPI deflation and variable construction
+#   2.3  SOE timing, duration, and event-time indices
+#   2.4  Weekly first differences and outlier trimming
 #
 # Depends on: panel_upc_week (from 00_read_in_data.R),
 #   RETAILERS_KEEP, cpi/cpi_20152025.xlsx
@@ -18,7 +18,7 @@
 
 
 # ==============================================================================
-# 1. PRIMARY PRICE VARIABLE ASSIGNMENT
+# 2.1 PRIMARY PRICE VARIABLE ASSIGNMENT
 # ==============================================================================
 # p_ist is set to p_ist_net (volume-weighted transaction price) for all main
 # regressions. This is the consumer-relevant price and matches the paper's
@@ -30,7 +30,7 @@ panel_upc_week <- panel_upc_week %>%
   mutate(p_ist = p_ist_net)
 
 # ==============================================================================
-# 2. CPI DEFLATION AND VARIABLE CONSTRUCTION
+# 2.2 CPI DEFLATION AND VARIABLE CONSTRUCTION
 # ==============================================================================
 # CPI source: national monthly CPI-U (BLS, 1982-84 = 100), rebased so that
 # January 2018 = 1.00 (deflator P_t). Each observation is assigned the
@@ -41,7 +41,7 @@ panel_upc_week <- panel_upc_week %>%
 #   correct outcome for main regressions.
 #
 # Real series (p_real, w_real, margin_real):
-#   Used only in the supplementary descriptive table (Section III.A).
+#   Used only in the supplementary period-means table (05_tab_period_means_real.tex).
 # ==============================================================================
 
 message("Reading and rebasing CPI ...")
@@ -93,7 +93,7 @@ if (missing_cpi > 0) {
 }
 
 # ==============================================================================
-# 3. SOE TIMING, DURATION, AND EVENT-TIME INDICES
+# 2.3 SOE TIMING, DURATION, AND EVENT-TIME INDICES
 # ==============================================================================
 # T_start and T_end are the first and last week_seq values with SoE == 1
 # in each state. All stores in the same state share the same T_start/T_end.
@@ -132,7 +132,7 @@ message("SOE start and end weeks by state:")
 print(soe_dates)
 
 # ==============================================================================
-# 4. WEEKLY FIRST DIFFERENCES AND OUTLIER TRIMMING
+# 2.4 WEEKLY FIRST DIFFERENCES AND OUTLIER TRIMMING
 # ==============================================================================
 # First differences are taken within each store-product cell (sorted by week_seq).
 #
@@ -142,9 +142,12 @@ print(soe_dates)
 # Log first differences (dlnp, dlnw): constructed from real prices; used
 #   only for trimming.
 #
+# Shelf-price change and lagged promotion share (dP_gross, share_on_sale_lag):
+#   used only in the non-promotional pass-through robustness (07_passthrough.R).
+#
 # Trimming: top and bottom 1% of dlnp and dlnw within each product are removed.
 #   The trim is applied identically to both the log and level panels so they
-#   remain aligned for Section IV.C comparisons.
+#   remain aligned for the levels-vs-logs pass-through comparison (07_passthrough.R).
 # ==============================================================================
 
 message("Constructing weekly first differences ...")
@@ -160,7 +163,12 @@ panel_est_raw <- panel_levels %>%
     lnp  = log(p_real),
     lnw  = log(w_real),
     dlnp = lnp - lag(lnp),
-    dlnw = lnw - lag(lnw)
+    dlnw = lnw - lag(lnw),
+    # Shelf-price change and lagged promotion share for the non-promotional
+    # pass-through robustness in 07_passthrough.R (built here so the lags
+    # match the ones used for dP).
+    dP_gross          = p_ist_gross   - lag(p_ist_gross),
+    share_on_sale_lag = lag(share_on_sale)
   ) %>%
   ungroup()
 

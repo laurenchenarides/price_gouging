@@ -6,12 +6,12 @@
 # Chenarides, Richards, and Dong
 #
 # Master script. Source this file to reproduce all tables and figures.
-# Open pg_project.Rproj in RStudio before running — it sets the working
+# Open pg_project.Rproj in RStudio before running ??? it sets the working
 # directory to the project root automatically.
 #
 # Prerequisites:
-#   1. Server-side SQL build completed (code/BuildMarkupsNew_2026_04.sql,
-#      then code/BuildMarkupsNew_PromoExpansion.sql).
+#   1. Server-side SQL build completed (code/sql/BuildMarkupsNew_2026_04.sql,
+#      then code/sql/BuildMarkupsNew_PromoExpansion.sql).
 #   2. cpi/cpi_20152025.xlsx present (BLS CPI-U, 1982-84 = 100).
 #   3. Connection details set in code/config.R and global vars.
 #
@@ -25,6 +25,9 @@
 #   06_uniform_pricing.R               Mechanisms: Mechanism 1 (Constant Retail Prices)
 #   07_passthrough.R                   Mechanisms: Mechanism 2 (Variation in Pass-Through)
 #   08_promotional_expansion.R         Mechanisms: Mechanism 3 (Countercyclical Pricing)
+#   09_elasticities.R                  Demand elasticity and curvature by period
+#   10_inventory_bottleneck.R          Inventory, weeks of supply, shrink bound
+#                                      (needs DB access on first run; cached to data/)
 # ==============================================================================
 
 rm(list = ls())
@@ -61,6 +64,11 @@ source("code/05_regressions.R")
 source("code/06_uniform_pricing.R")
 source("code/07_passthrough.R")
 source("code/08_promotional_expansion.R")
+source("code/09_elasticities.R")
+
+# Inventory pulls from stg.combined_inventory on the first run (cached to data/).
+if (!exists("RUN_INVENTORY")) RUN_INVENTORY <- TRUE
+if (RUN_INVENTORY) source("code/10_inventory_bottleneck.R")
 
 message("=== Analysis complete. ===")
 message("Tables (LaTeX): tables_latex/")

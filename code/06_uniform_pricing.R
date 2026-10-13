@@ -3,6 +3,17 @@
 #
 # Mechanisms: Mechanism 1 (Constant Retail Prices / Uniform Pricing)
 #
+# Sections:
+#   M1a. Pairwise log differences (store pairs within retailer-product-week)
+#   M1b. Distribution plots
+#   M1c. Summary tables by retailer and pair status
+#   M1d. Primary regression panel (pair-status cells)
+#   M1e. Pooled uniformity regressions
+#   M1f. Cross-state (geography) control
+#   M1g. Retailer heterogeneity regressions
+#   M1h. Minimum detectable effect for the mixed-status coefficient
+#   M1i. Coefficient plots for retailer heterogeneity
+#
 # ------------------------------------------------------------------------------
 # CONSTRUCTION OF MATCHED PAIRS
 #
@@ -44,29 +55,31 @@
 #   as in the original). Retailer 2 contributes far more pairs per cell than
 #   retailers 3/5, so consider TRUE as robustness.
 #
-# Because sample construction changed, ALL outputs of this script (paper Tables
-# 10, 11, D.21-D.26; Figures 9-12, D.15) must be regenerated and re-transcribed.
-#
 # Depends on: panel_est, save_tex(), SAVE_CSV  (from run_all.R / 02_build_panel.R)
 #
+# Placement in the paper: [main] = Mechanism 1 section (manuscript label sec:m1);
+#   [appendix] = Mechanism 1 appendix (manuscript label sec:m1_appendix);
+#   [not yet placed] = new output, not yet in the manuscript.
+#
 # Outputs (tables_latex/):
-#   15_tab_uniformity_summary_retail.tex
-#   16_tab_uniformity_summary_wholesale.tex
-#   17_tab_uniformity_retail_main.tex
-#   17b_tab_uniformity_retail_robust.tex
-#   17c_tab_uniformity_retail_crossstate.tex      
-#   18_tab_uniformity_wholesale_main.tex
-#   18b_tab_uniformity_wholesale_robust.tex
-#   18c_tab_uniformity_wholesale_crossstate.tex   
-#   19_tab_uniformity_heterog_retail.tex
-#   20_tab_uniformity_heterog_wholesale.tex
+#   15_tab_uniformity_summary_retail.tex           [appendix]
+#   16_tab_uniformity_summary_wholesale.tex        [appendix]
+#   17_tab_uniformity_retail_main.tex              [main]
+#   17b_tab_uniformity_retail_robust.tex           [appendix]
+#   17c_tab_uniformity_retail_crossstate.tex       [appendix]
+#   17d_tab_mixed_mde.tex                          [not yet placed; appendix]
+#   18_tab_uniformity_wholesale_main.tex           [main]
+#   18b_tab_uniformity_wholesale_robust.tex        [appendix]
+#   18c_tab_uniformity_wholesale_crossstate.tex    [appendix]
+#   19_tab_uniformity_heterog_retail.tex           [appendix]
+#   20_tab_uniformity_heterog_wholesale.tex        [appendix]
 #
 # Outputs (figures/):
-#   14_fig_logdiff_retail_pooled.png
-#   15_fig_logdiff_wholesale_pooled.png
-#   16_fig_logdiff_retail_by_period.png     (4 facets incl. Mixed status)
-#   17_fig_logdiff_wholesale_by_period.png  (4 facets incl. Mixed status)
-#   18_fig_uniformity_heterog_coef.png
+#   14_fig_logdiff_retail_pooled.png               [main]
+#   15_fig_logdiff_wholesale_pooled.png            [main]
+#   16_fig_logdiff_retail_by_period.png            [appendix] (4 facets incl. Mixed status)
+#   17_fig_logdiff_wholesale_by_period.png         [appendix] (4 facets incl. Mixed status)
+#   18_fig_uniformity_heterog_coef.png             [appendix]
 # ==============================================================================
 
 message("Estimating Mechanism 1 uniform pricing (C1-fixed + cross-state control) ...")
@@ -97,7 +110,7 @@ stopifnot(!anyDuplicated(week_month_lookup$week_seq))  # one month per week
 PAIR_STATUS_LEVELS <- c("Pre-SOE", "During SOE", "Post-SOE", "Mixed status")
 
 # ==============================================================================
-# PAIRWISE LOG DIFFERENCES  (C1 FIX: period/month_fe removed from join keys)
+# M1a. PAIRWISE LOG DIFFERENCES  (C1 FIX: period/month_fe removed from join keys)
 # ==============================================================================
 
 make_pairwise_logdiff <- function(df, price_col) {
@@ -184,7 +197,7 @@ pairs_retail %>%
   print()
 
 # ==============================================================================
-# DISTRIBUTION PLOTS
+# M1b. DISTRIBUTION PLOTS
 # ==============================================================================
 
 COMMON_BINWIDTH <- 0.01
@@ -239,7 +252,7 @@ plot_logdiff_by_status(pairs_wholesale, "Within-chain wholesale cost uniformity 
                        "17_fig_logdiff_wholesale_by_period.png")
 
 # ==============================================================================
-# SUMMARY TABLES: mean absolute log diff by retailer and pair status
+# M1c. SUMMARY TABLES: mean absolute log diff by retailer and pair status
 # ==============================================================================
 
 make_disp_summary <- function(pairs_df, caption_str, label_str,
@@ -291,9 +304,9 @@ make_disp_summary(
 )
 
 # ==============================================================================
-# PRIMARY REGRESSION PANEL: retailer-product-week-PAIR_STATUS cells
+# M1d. PRIMARY REGRESSION PANEL: retailer-product-week-PAIR_STATUS cells
 # ==============================================================================
-# Paper-comparable specification (Tables 17/18). Cells defined by pair status;
+# Main-text specification (files 17/18). Cells defined by pair status;
 # straddle weeks contribute up to three cells (During, Post, Mixed).
 # ==============================================================================
 
@@ -325,7 +338,7 @@ message(sprintf(
 ))
 
 # ==============================================================================
-# POOLED UNIFORMITY REGRESSIONS (primary — paper Tables 17/18)
+# M1e. POOLED UNIFORMITY REGRESSIONS (primary — main-text files 17/18)
 # ==============================================================================
 # Diff_bar ~ during + post + mixed | FEs, omitted category = Pre-SOE pairs.
 # Weights: n_pairs if UNIF_WEIGHT_BY_PAIRS (author decision; default FALSE).
@@ -423,7 +436,7 @@ etable(
 message("Saved: tables_latex/18b_tab_uniformity_wholesale_robust.tex")
 
 # ==============================================================================
-# CROSS-STATE (GEOGRAPHY) CONTROL: is `mixed` an enforcement effect or geography?
+# M1f. CROSS-STATE (GEOGRAPHY) CONTROL: is `mixed` an enforcement effect or geography?
 # ==============================================================================
 # Finer panel: split each cell by cross_state. Then run the SAME model with and
 # without the cross_state control so the only difference between columns is the
@@ -484,7 +497,7 @@ xs_wholesale <- run_xs_pair(disp_wholesale_xs)
 
 XS_NOTES <- c(
   "Unit of observation: retailer-product-week-pair-status-crossstate cell (finer",
-  "than Tables 17/18; point estimates therefore differ slightly).",
+  "than Tables~\\ref{tab:uniformity_retail_main} and~\\ref{tab:uniformity_wholesale_main}; point estimates therefore differ slightly).",
   "Column (1) omits the cross-state control; columns (2)-(3) add it.",
   "``Cross-state pair'' = the two stores are in different states (geography).",
   "``Mixed status'' pairs are always cross-state, so the mixed coefficient in",
@@ -540,9 +553,10 @@ if (SAVE_CSV) {
 }
 
 # ==============================================================================
-# RETAILER HETEROGENEITY REGRESSIONS  (mixed interactions added)
+# M1g. RETAILER HETEROGENEITY REGRESSIONS  (mixed interactions added)
 # ==============================================================================
-# Only chains operating in >1 state can have mixed-status pairs. Per Table A.16,
+# Only chains operating in >1 state can have mixed-status pairs. Per the store
+# locations by retailer and state (02_tab_decadata_summary_wide.tex),
 # retailer 2 operates in all five states, retailer 3 in FL/GA, retailer 5 in FL
 # only — so i(retailer, mixed) is estimable only for retailers 2 and 3, and
 # fixest drops the empty retailer-5 interaction automatically (expected).
@@ -594,7 +608,96 @@ etable(
 message("Saved: tables_latex/20_tab_uniformity_heterog_wholesale.tex")
 
 # ==============================================================================
-# COEFFICIENT PLOTS FOR RETAILER HETEROGENEITY
+# M1h. MINIMUM DETECTABLE EFFECT FOR THE MIXED-STATUS COEFFICIENT (review, Claude Major 6)
+# ==============================================================================
+# Mixed-status pairs are ~1% of pairs and come almost entirely from Retailer 2,
+# so a null on `mixed` is only informative if the design could have detected a
+# meaningful effect. MDE at 5% two-sided size and 80% power:
+#   MDE = (t_{1 - alpha/2, df} + t_{power, df}) * SE
+# with df = the t degrees of freedom fixest uses (G - 1 under clustering).
+# Scaled by the pre-SOE mean of Diff_bar so the MDE reads against the baseline
+# level of within-chain price dispersion.
+# ==============================================================================
+
+MDE_ALPHA <- 0.05
+MDE_POWER <- 0.80
+
+mde_row <- function(model, term, label) {
+  if (!term %in% names(coef(model))) return(NULL)
+  se_t <- unname(fixest::se(model)[term])
+  df_t <- fixest::degrees_freedom(model, type = "t")
+  tibble::tibble(
+    Specification = label,
+    Estimate      = unname(coef(model)[term]),
+    SE            = se_t,
+    df            = df_t,
+    MDE           = (qt(1 - MDE_ALPHA / 2, df_t) + qt(MDE_POWER, df_t)) * se_t
+  )
+}
+
+pre_mean_retail <- disp_retail %>%
+  filter(during == 0L, post == 0L, mixed == 0L) %>%
+  summarise(m = mean(Diff_bar, na.rm = TRUE)) %>%
+  pull(m)
+
+mixed_heterog_term <- function(model, retailer_id) {
+  hit <- grep(paste0("^retailer::", retailer_id, ":mixed$"), names(coef(model)), value = TRUE)
+  if (length(hit) == 1L) hit else NA_character_
+}
+
+mde_tbl <- bind_rows(
+  # Row labels use \ref so the PDF shows the manuscript's table numbers,
+  # not the file-name prefixes.
+  mde_row(regs_retail$main_ret_prod, "mixed",
+          "Pooled, retailer + product FE (Table~\\ref{tab:uniformity_retail_main}, col. 3)"),
+  mde_row(regs_retail$rob_ret_prod,  "mixed",
+          "Pooled, + month FE (Table~\\ref{tab:uniformity_retail_robust}, col. 3)"),
+  mde_row(xs_retail$net,             "mixed",
+          "Net of cross-state (Table~\\ref{tab:uniformity_retail_crossstate}, col. 2)"),
+  mde_row(xs_retail$net_month,       "mixed",
+          "Net of cross-state, + month FE (Table~\\ref{tab:uniformity_retail_crossstate}, col. 3)"),
+  mde_row(heterog_retail$main_prod,      mixed_heterog_term(heterog_retail$main_prod, 2),
+          "Retailer 2, product FE (Table~\\ref{tab:uniformity_heterog_retail}, col. 1)"),
+  mde_row(heterog_retail$rob_prod_month, mixed_heterog_term(heterog_retail$rob_prod_month, 2),
+          "Retailer 2, product + month FE (Table~\\ref{tab:uniformity_heterog_retail}, col. 3)"),
+  mde_row(heterog_retail$main_prod,      mixed_heterog_term(heterog_retail$main_prod, 3),
+          "Retailer 3, product FE (Table~\\ref{tab:uniformity_heterog_retail}, col. 1)"),
+  mde_row(heterog_retail$rob_prod_month, mixed_heterog_term(heterog_retail$rob_prod_month, 3),
+          "Retailer 3, product + month FE (Table~\\ref{tab:uniformity_heterog_retail}, col. 3)")
+) %>%
+  mutate(MDE_rel_pre = MDE / pre_mean_retail)
+
+message(sprintf("Pre-SOE mean of Diff_bar (retail): %.4f", pre_mean_retail))
+print(mde_tbl %>% mutate(across(where(is.numeric), ~ round(.x, 4))))
+
+if (SAVE_CSV) write.csv(mde_tbl, "tables_csv/17d_tab_mixed_mde.csv", row.names = FALSE)
+
+save_tex(
+  kbl(mde_tbl %>%
+        mutate(across(c(Estimate, SE, MDE), ~ formatC(.x, digits = 3, format = "f")),
+               MDE_rel_pre = formatC(MDE_rel_pre, digits = 2, format = "f"),
+               df = as.character(df)) %>%
+        rename(`$t$ df` = df, `MDE (80\\% power)` = MDE,
+               `MDE / pre-SOE mean` = MDE_rel_pre),
+      format = "latex", booktabs = TRUE, escape = FALSE,
+      caption = "Minimum detectable effect for the mixed-status coefficient (retail price uniformity)",
+      label   = "mixed_mde",
+      align   = "lrrrrr") %>%
+    kable_styling(latex_options = c("hold_position", "scale_down")) %>%
+    footnote(
+      general = c(
+        "MDE $= (t_{0.975,\\\\,df} + t_{0.80,\\\\,df}) \\\\times SE$: the smallest true mixed-status effect the specification",
+        "would detect with 80\\\\% power at the 5\\\\% level. Degrees of freedom are those fixest uses for $t$-tests",
+        "(number of retailer-product clusters minus one).",
+        sprintf("Last column divides the MDE by the pre-SOE mean of $\\\\overline{Diff}$ (%.4f).", pre_mean_retail)
+      ),
+      general_title = "", escape = FALSE
+    ),
+  "17d_tab_mixed_mde.tex"
+)
+
+# ==============================================================================
+# M1i. COEFFICIENT PLOTS FOR RETAILER HETEROGENEITY
 # ==============================================================================
 
 extract_heterog_coef <- function(heterog_list, outcome_label, specs) {

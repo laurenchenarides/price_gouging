@@ -2,9 +2,10 @@
 # 03_descriptive_tables.R
 #
 # Purpose: Produce all descriptive tables and figures.
-#   5.  DecaData summary, product coverage (Tables II.A-C, Figs II.A-B)
-#   6.  Period means (nominal main, real supplementary)
-#   7.  Flagged-weeks table and stacked bar figure
+#   3.1  DecaData summary and product coverage
+#   3.2  Period means (nominal main, real supplementary)
+#   3.3  Flagged-weeks table and stacked bar figure
+#   3.4  Summary statistics table
 #
 # Depends on: panel_est (from 02_build_panel.R), save_tex(), SAVE_CSV
 #
@@ -26,7 +27,7 @@
 
 
 # ==============================================================================
-# 5. DECADATA SUMMARY AND PRODUCT COVERAGE
+# 3.1 DECADATA SUMMARY AND PRODUCT COVERAGE
 # ==============================================================================
 
 message("Building summary and product coverage tables ...")
@@ -307,7 +308,7 @@ save_tex(
 
 
 # ==============================================================================
-# 6. PERIOD MEANS
+# 3.2 PERIOD MEANS
 # ==============================================================================
 
 message("Building period means tables ...")
@@ -412,7 +413,7 @@ save_tex(
 
 
 # ==============================================================================
-# 7. FLAGGED-WEEKS TABLE
+# 3.3 FLAGGED-WEEKS TABLE
 # ==============================================================================
 # A store-product-week is flagged if the nominal retail price during the SOE
 # exceeds the thirty-day pre-SOE average by more than threshold kappa.
@@ -605,7 +606,7 @@ ggsave("figures/03_fig_flag_cluster_stacked.png", g_flag_cluster,
 message("Saved: figures/03_fig_flag_cluster_stacked.png")
 
 # ==============================================================================
-# SUMMARY STATISTICS TABLE
+# 3.4 SUMMARY STATISTICS TABLE
 # ==============================================================================
 
 sum_stat <- function(x) {

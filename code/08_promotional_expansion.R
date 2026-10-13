@@ -30,27 +30,32 @@
 #        did Q rise through more purchase occasions (extensive) or larger
 #        quantity per occasion (intensive)?  ln Q = ln(occasions) + ln(Q/occ),
 #        so the SOE coefficients satisfy beta_Q = beta_ext + beta_int.
+#   M3e. Category-level robustness -- gross/net price, share on sale, and the
+#        extensive/intensive decomposition over all UPCs in each focal category.
 #
 # DATA INPUTS:
 #   panel_est    -- from 02_build_panel.R (store-product-week)
 #   promo_panel  -- from stg.pd_store_upc_week (read via SQL connection)
 #
+# Placement in the paper: [main] = Mechanism 3 section (manuscript label sec:m3),
+#   in the order listed; [appendix] = Mechanism 3 appendix (label sec:m3_appendix).
+#
 # OUTPUTS (tables_latex/)
-#   21_tab_gross_price_stability.tex   (Sec 5.3 body, table 1)
-#   22_tab_promo_intensity.tex         (Sec 5.3 body, table 2)
-#   23_tab_extensive_intensive.tex     (Sec 5.3 body, table 3)
-#   24_tab_gross_net_gap.tex           (appendix)
-#   25_tab_category_price_promo.tex    (appendix, category robustness)
-#   26_tab_category_decomp.tex         (appendix, category robustness)
+#   21_tab_gross_price_stability.tex   [main, 1st table]
+#   22_tab_promo_intensity.tex         [main, 2nd table]
+#   23_tab_extensive_intensive.tex     [main, 3rd table]
+#   24_tab_gross_net_gap.tex           [appendix]
+#   25_tab_category_price_promo.tex    [appendix, category robustness]
+#   26_tab_category_decomp.tex         [appendix, category robustness]
 #
 # OUTPUTS (figures/):
-#   19_fig_gross_net_gap.png
-#   20_fig_promo_intensity.png
-#   21_fig_extensive_intensive.png
+#   19_fig_gross_net_gap.png           [main]
+#   20_fig_promo_intensity.png         [appendix]
+#   21_fig_extensive_intensive.png     [appendix]
 #
 # DEPENDS ON: panel_est, save_tex(), SAVE_CSV
 #   Requires stg.pd_store_upc_week in SQL (run
-#   BuildMarkupsNew_PriceDiscrimination.sql first). The extensive/intensive
+#   code/sql/BuildMarkupsNew_PromoExpansion.sql first). The extensive/intensive
 #   decomposition uses the exact distinct-basket occasion count
 #   (weekly_occasions from stg.pd_ext_int_week) when USE_EXACT_OCCASIONS = TRUE,
 #   which is the DEFAULT (see below). If stg.pd_ext_int_week is unavailable, set
@@ -189,7 +194,8 @@ promo_panel <- tryCatch({
 # Outcome 2: avg_discount_depth -- regular minus sale price, conditional on a sale.
 # For share_on_sale and gross-price levels, the SOE effect is a common,
 # simultaneous shift across states; week FEs absorb it (column 2), so the
-# no-week-FE column is the relevant specification (parallel to Section 4).
+# no-week-FE column is the relevant specification (parallel to the price and
+# margin level regressions in 05_regressions.R).
 # ==============================================================================
 
 if (!is.null(promo_panel)) {
@@ -399,7 +405,7 @@ if (!is.null(promo_panel)) {
 message("Mechanism 3 (countercyclical promotional pricing) complete.")
 
 # ==============================================================================
-# CATEGORY-LEVEL ROBUSTNESS (substitution across varieties)
+# M3e. CATEGORY-LEVEL ROBUSTNESS (substitution across varieties)
 # Part of 08_promotional_expansion.R (runs after M3d).
 #
 # Rebuilds the Mechanism 3 outcomes at the store-CATEGORY-week level, aggregating
@@ -407,21 +413,22 @@ message("Mechanism 3 (countercyclical promotional pricing) complete.")
 # whether the promotional-expansion and demand results reflect substitution
 # across varieties within a category.
 #
-# Requires stg.store_category_week (built by the category rollup SQL). SOE timing
+# Requires stg.store_category_week (built by the category rollup at the end of
+# code/sql/BuildMarkupsNew_2026_04.sql). SOE timing
 # is joined from panel_est so it is identical to the main analysis.
 #
 # --------------------------------------------------------------------------
-# ***  WHERE TO FILL IN [X] IN THE MANUSCRIPT  ***
-#   The Section 5.3 footnote reads: "...aggregating over all [X] varieties the
-#   retailers sell in these five categories." [X] = the total number of DISTINCT
-#   UPCs across all five focal categories. The rolled-up store_category_week
-#   table only stores n_upcs PER cell (per store-week), which is NOT the
-#   sample-wide distinct count, so the breadth block below queries
-#   stg.pos_weekly_presence directly and PRINTS the value to the console:
-#       ">>> [X] = total distinct UPCs across the five categories = NNN <<<"
-#   Use that NNN for [X]. (Equivalently, run the "Total distinct UPCs per
-#   category" query at the bottom of sql_category_rollup.sql and sum the five
-#   rows.)
+# ***  UPC COUNT REPORTED IN THE MANUSCRIPT  ***
+#   The category-robustness paragraph in the Mechanism 3 section (and the
+#   Mechanism 3 appendix) reports the total number of DISTINCT UPCs across the
+#   five focal categories (618 in manuscript_v13). The rolled-up
+#   store_category_week table only stores n_upcs PER cell (per store-week),
+#   which is NOT the sample-wide distinct count, so the breadth block below
+#   queries stg.pos_weekly_presence directly and PRINTS the value:
+#       ">>> Total distinct UPCs across the five categories = NNN <<<"
+#   If NNN differs from the manuscript, update the manuscript. (Equivalently,
+#   run the "Total distinct UPCs per category" query at the end of
+#   BuildMarkupsNew_2026_04.sql and sum the five rows.)
 # --------------------------------------------------------------------------
 #
 # OUTPUTS (tables_latex/):
@@ -445,16 +452,16 @@ cat_panel <- tryCatch({
   df
 }, error = function(e) {
   message("Could not load stg.store_category_week: ", conditionMessage(e))
-  message("Run the category rollup SQL first; skipping category robustness.")
+  message("Run the category rollup at the end of BuildMarkupsNew_2026_04.sql first; skipping category robustness.")
   NULL
 })
 
 if (!is.null(cat_panel)) {
   
   # --------------------------------------------------------------------------
-  # BREADTH: total distinct UPCs across the five focal categories -> fills [X].
-  # Same source and filters as the rollup SQL's "Total distinct UPCs per
-  # category" query. Printed to the console; use the total for [X].
+  # BREADTH: total distinct UPCs across the five focal categories (the count
+  # reported in the manuscript). Same source and filters as the rollup SQL's
+  # "Total distinct UPCs per category" query. Printed to the console.
   # --------------------------------------------------------------------------
   cat_breadth <- tryCatch({
     con_b <- open_decadata_connection()
@@ -476,7 +483,7 @@ if (!is.null(cat_panel)) {
     DBI::dbDisconnect(con_b)
     by_cat
   }, error = function(e) {
-    message("Breadth query failed (fill [X] from the SQL query instead): ",
+    message("Breadth query failed (get the UPC count from the SQL query instead): ",
             conditionMessage(e))
     NULL
   })
@@ -485,9 +492,9 @@ if (!is.null(cat_panel)) {
     message("Distinct UPCs per focal category (breadth actually captured):")
     print(cat_breadth)
     message(sprintf(
-      ">>> [X] = total distinct UPCs across the five categories = %d <<<",
+      ">>> Total distinct UPCs across the five categories = %d <<<",
       sum(cat_breadth$n_upcs_total)))
-    message("    Fill this value in for [X] in the Section 5.3 footnote.")
+    message("    Check this against the UPC count in the Mechanism 3 category-robustness paragraph.")
   }
   
   # SOE indicators from the main analysis (state-week level) -> identical timing
@@ -554,7 +561,7 @@ if (!is.null(cat_panel)) {
   message("Saved: tables_latex/25_tab_category_price_promo.tex")
   
   # ----------------------------------------------------------------------------
-  # (B) Extensive/intensive decomposition at category grain (mirrors Table 23)
+  # (B) Extensive/intensive decomposition at category grain (mirrors 23_tab_extensive_intensive.tex)
   #     Within-category variety-switching does not change the category-level
   #     occasion count, so if the category extensive margin also rises the rise
   #     in quantity sold is category breadth, not reallocation toward the focal

@@ -4,10 +4,12 @@
 # Mechanisms: Mechanism 2 (Variation in Pass-Through)
 #
 # Purpose: Pass-through regressions and optional duration extension.
-#   11.  Baseline pass-through (with and without week FEs)
-#   11a. IV pass-through
-#   11b. Duration extension (Dur_wk interaction)
-#   11c. Pass-through in logs (Sangani, 2026 check)
+#   M2a. Baseline pass-through (with and without week FEs)
+#   M2b. IV pass-through
+#   M2c. Duration extension (Dur_wk interaction)
+#   M2d. Pass-through in logs (Sangani, 2026 check)
+#   M2e. Robustness requested in review: non-promotional weeks, shelf price,
+#        excluding bananas, capped post-SOE windows (12d_tab_passthrough_robust.tex)
 #
 # Specification (main):
 #   Delta_P_ist = alpha + beta1*Delta_w + beta2*(Delta_w*SOE) +
@@ -55,7 +57,7 @@ pt_data <- panel_est %>%
 
 
 # ==============================================================================
-# 11. BASELINE PASS-THROUGH REGRESSIONS
+# M2a. BASELINE PASS-THROUGH REGRESSIONS
 # ==============================================================================
 
 m_pt_no_fe <- feols(
@@ -125,7 +127,7 @@ ggsave("figures/12_fig_passthrough_coef.png", g_pt_coef,
 message("Saved: figures/12_fig_passthrough_coef.png")
 
 # ==============================================================================
-# 11a. IV PASS-THROUGH
+# M2b. IV PASS-THROUGH
 # ==============================================================================
 # Instrument: distance-weighted cross-market wholesale price (Z_ist).
 #   For each store i in state s, Z_ist is the inverse-distance-weighted average
@@ -256,7 +258,7 @@ if (RUN_IV && all(c("lat", "lon") %in% names(store_info))) {
 }
 
 # ==============================================================================
-# 11b. EXTENSION: PASS-THROUGH BY DURATION
+# M2c. EXTENSION: PASS-THROUGH BY DURATION
 # ==============================================================================
 # Adds a three-way interaction dW*SOE*Dur_wk to ask how pass-through evolves
 # as enforcement continues. Week FEs are included; the duration effect is
@@ -365,7 +367,7 @@ if (RUN_DUR_EXTENSION) {
 
 
 # ==============================================================================
-# 11c. PASS-THROUGH IN LOGS (ROBUSTNESS -- Sangani 2026)
+# M2d. PASS-THROUGH IN LOGS (ROBUSTNESS -- Sangani 2026)
 # ==============================================================================
 # Sangani (QJE 2026) shows that pass-through measured in percentages (logs)
 # appears incomplete even when pass-through in levels is complete, because
@@ -452,5 +454,87 @@ etable(
   )
 )
 message("Saved: tables_latex/12b_tab_passthrough_log.tex")
+
+
+# ==============================================================================
+# M2e. ROBUSTNESS REQUESTED IN REVIEW (Sept 2026 comments)
+# ==============================================================================
+# Preferred specification (week FEs, store clustering), re-estimated on:
+#   (2) Non-promotional weeks: the current AND previous week both have no
+#       transactions at a promotional price, so dP is a shelf-price change.
+#       Tests whether the SOE attenuation is a separate channel from the rise
+#       in promotions (Tim's isomorphism point; Claude Major 2). If the
+#       attenuation disappears here, Mechanisms 2 and 3 are the same mechanism.
+#   (3) Posted shelf (gross) price change on the full sample.
+#   (4) Excluding bananas (Claude Major 5).
+#   (5)-(6) Post-SOE window capped at 26 / 52 weeks after expiry (Claude Major 3).
+#
+# PT_NONPROMO_MAX_SHARE sets the promotion-share threshold for "non-promotional"
+# (default 0 = strictly no promotional transactions in either week).
+# ==============================================================================
+
+if (!exists("PT_NONPROMO_MAX_SHARE")) PT_NONPROMO_MAX_SHARE <- 0
+
+pt_nonpromo <- pt_data %>%
+  filter(is.finite(share_on_sale), is.finite(share_on_sale_lag),
+         share_on_sale     <= PT_NONPROMO_MAX_SHARE,
+         share_on_sale_lag <= PT_NONPROMO_MAX_SHARE)
+
+# How much of each period survives the non-promotional filter
+pt_nonpromo_coverage <- pt_data %>%
+  mutate(period = case_when(SoE == 1L ~ "During SOE", postSoE == 1L ~ "Post-SOE",
+                            TRUE ~ "Pre-SOE"),
+         nonpromo = is.finite(share_on_sale) & is.finite(share_on_sale_lag) &
+           share_on_sale <= PT_NONPROMO_MAX_SHARE &
+           share_on_sale_lag <= PT_NONPROMO_MAX_SHARE) %>%
+  group_by(period) %>%
+  summarise(n_all = n(), n_nonpromo = sum(nonpromo),
+            share_kept = n_nonpromo / n_all, .groups = "drop")
+message("Non-promotional pass-through sample by period:")
+print(pt_nonpromo_coverage)
+
+pt_cap <- function(cap) pt_data %>% filter(postSoE == 0L | (!is.na(k_end) & k_end <= cap))
+
+PT_FML <- dP ~ dW + dW:SoE + dW:postSoE | product + store_id + week_fe
+
+pt_robust <- list(
+  "(1) Baseline"            = m_pt_with_fe,
+  "(2) Non-promo weeks"     = feols(PT_FML, data = pt_nonpromo, cluster = ~ store_id),
+  "(3) Shelf price"         = feols(dP_gross ~ dW + dW:SoE + dW:postSoE |
+                                      product + store_id + week_fe,
+                                    data = pt_data %>% filter(is.finite(dP_gross)),
+                                    cluster = ~ store_id),
+  "(4) Excl. bananas"       = feols(PT_FML,
+                                    data = pt_data %>% filter(product != "bananas") %>%
+                                      mutate(product = droplevels(product)),
+                                    cluster = ~ store_id),
+  "(5) Post $\\leq$ 26 wk"  = feols(PT_FML, data = pt_cap(26L), cluster = ~ store_id),
+  "(6) Post $\\leq$ 52 wk"  = feols(PT_FML, data = pt_cap(52L), cluster = ~ store_id)
+)
+
+etable(pt_robust)
+
+etable(
+  pt_robust,
+  tex     = TRUE,
+  file    = "tables_latex/12d_tab_passthrough_robust.tex",
+  title   = "Pass-through: non-promotional weeks, shelf price, excluding bananas, and capped post-SOE windows",
+  label   = "tab:passthrough_robust",
+  digits  = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2,
+  dict    = c(
+    "dW"         = "$\\Delta w_{ist}$",
+    "dW:SoE"     = "$\\Delta w_{ist} \\times SOE_{st}$",
+    "dW:postSoE" = "$\\Delta w_{ist} \\times postSOE_{st}$"
+  ),
+  notes   = c(
+    "Dependent variable: $\\Delta p_{ist}$ (net price) in all columns except (3), which uses the",
+    "change in the posted shelf (gross) price. Column (1) reproduces Table~\\ref{tab:passthrough_reg}, column (2).",
+    "Column (2) keeps store-product-weeks where neither the current nor the previous week had",
+    "any transactions at a promotional price. Column (4) drops bananas. Columns (5) and (6) keep",
+    "only the first 26 or 52 weeks after each state's SOE expired.",
+    "Fixed effects: product, store, and week. Standard errors clustered at the store level."
+  )
+)
+message("Saved: tables_latex/12d_tab_passthrough_robust.tex")
 
 message("Pass-through regressions complete.")

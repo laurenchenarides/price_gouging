@@ -2,11 +2,18 @@
 # 05_regressions.R
 #
 # Empirical Model; Results: Retail Prices; Results: Markups
-#   9.  Price level regressions (baseline and state heterogeneity)
-#   9b. Wild cluster bootstrap robustness (price)
-#   10. Margin level regressions (baseline and state heterogeneity)
-#   10b. Wild cluster bootstrap robustness (margin)
-#   10c. + 10d. Cost regressions (Accounting check)
+#   5.1  Price level regressions (5.1a: state heterogeneity)
+#   5.1b Wild cluster bootstrap robustness (price)
+#   5.2  Margin level regressions (5.2a: state heterogeneity)
+#   5.2b Wild cluster bootstrap robustness (margin)
+#   5.3  Cost regressions (accounting check)
+#   5.4  Robustness requested in review (Sept 2026 comments):
+#        5.4a Excluding bananas
+#        5.4b Post-SOE window capped at 26 and 52 weeks after expiry
+#        5.4c State heterogeneity with capped post-SOE windows (Mississippi)
+#        5.4d Event study around SOE activation
+#        5.4e Leave-one-state-out jackknife
+#        Within-R2 is added to Tables 08 and 10 (fitstat wr2).
 #
 # Specification:
 #   P_ist = alpha + beta1*SOE_st + beta2*postSOE_st + gamma_j + delta_i
@@ -28,12 +35,18 @@
 #   10b_tab_margin_wcb.tex
 #   10c_tab_cost_reg.tex
 #   10d_tab_cost_reg_state_heterog.tex
+#   08c_tab_price_robust.tex                (5.4a, 5.4b)
+#   10e_tab_margin_robust.tex               (5.4a, 5.4b)
+#   09b_tab_price_state_heterog_capped.tex  (5.4c)
+#   11b_tab_margin_state_heterog_capped.tex (5.4c)
+#   08d_tab_loso_jackknife.tex              (5.4e)
 #
 # Outputs (figures/):
 #   08_fig_price_coef_baseline.png
 #   09_fig_price_coef_state_heterog.png
 #   10_fig_margin_coef_prepost.png
 #   11_fig_margin_coef_state_heterog.png
+#   08b_fig_price_event_study.png           (5.4d)
 # ==============================================================================
 
 # remotes::install_github("s3alfisc/summclust")
@@ -90,7 +103,7 @@ format_wcb_table <- function(wcb_df, term_labels) {
 
 
 # ==============================================================================
-# 9. PRICE LEVEL REGRESSIONS
+# 5.1 PRICE LEVEL REGRESSIONS
 # ==============================================================================
 
 m_price_soe <- feols(
@@ -111,7 +124,7 @@ etable(
   file    = "tables_latex/08_tab_price_reg.tex",
   title   = "Price regressions: SOE and post-SOE on nominal prices",
   label   = "tab:price_reg",
-  digits  = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2,
+  digits  = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2 + wr2,
   dict    = c("SoE" = "$SOE_{st}$", "postSoE" = "$postSOE_{st}$"),
   notes   = c(
     "Dependent variable: nominal retail price $p_{ist}$ (dollars per unit or pound).",
@@ -124,7 +137,7 @@ message("Saved: tables_latex/08_tab_price_reg.tex")
 
 
 # ------------------------------------------------------------------------------
-# 9a. State heterogeneity in price effects
+# 5.1a State heterogeneity in price effects
 # ------------------------------------------------------------------------------
 
 m_price_state_het <- feols(
@@ -251,7 +264,7 @@ broom::tidy(m_price_state_het, conf.int = TRUE) %>%
   mutate(across(where(is.numeric), ~ round(.x, 3)))
 
 # ==============================================================================
-# 9b. ROBUSTNESS: WILD CLUSTER BOOTSTRAP — PRICE
+# 5.1b ROBUSTNESS: WILD CLUSTER BOOTSTRAP — PRICE
 # ==============================================================================
 # Complements state-clustered SEs. Webb (2023) weights preferred for G < 10.
 # Applied to the baseline pooled model (m_price_prepost). The state-
@@ -289,7 +302,7 @@ message("Saved: tables_latex/08b_tab_price_wcb.tex")
 
 
 # ==============================================================================
-# 10. MARGIN LEVEL REGRESSIONS
+# 5.2 MARGIN LEVEL REGRESSIONS
 # ==============================================================================
 # Outcome: margin_nom = p_ist - w_ist (nominal dollar margin).
 # Same FE and clustering as price regressions.
@@ -315,7 +328,7 @@ etable(
   file    = "tables_latex/10_tab_margin_reg.tex",
   title   = "Margin regressions: SOE and post-SOE effects on nominal dollar margin",
   label   = "tab:margin_reg",
-  digits  = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2,
+  digits  = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2 + wr2,
   dict    = c("SoE" = "$SOE_{st}$", "postSoE" = "$postSOE_{st}$"),
   headers = list("Nominal margin $M_{ist}$" = 2),
   notes   = c(
@@ -330,7 +343,7 @@ message("Saved: tables_latex/10_tab_margin_reg.tex")
 
 
 # ------------------------------------------------------------------------------
-# 10a. State heterogeneity in margin effects
+# 5.2a State heterogeneity in margin effects
 # ------------------------------------------------------------------------------
 
 m_margin_state_het <- feols(
@@ -412,7 +425,7 @@ broom::tidy(m_margin_state_het, conf.int = TRUE) %>%
   mutate(across(where(is.numeric), ~ round(.x, 3)))
 
 # ==============================================================================
-# 10b. ROBUSTNESS: WILD CLUSTER BOOTSTRAP — MARGIN
+# 5.2b ROBUSTNESS: WILD CLUSTER BOOTSTRAP — MARGIN
 # ==============================================================================
 
 message("Running wild cluster bootstrap for margin regressions (B = 9999) ...")
@@ -444,7 +457,7 @@ save_tex(
 message("Saved: tables_latex/10b_tab_margin_wcb.tex")
 
 # ==============================================================================
-# Accounting Check: COST REGRESSIONS
+# 5.3 COST REGRESSIONS (accounting check)
 # ==============================================================================
 
 m_cost_soe <- feols(
@@ -518,5 +531,325 @@ save_tex(
   "10d_tab_cost_reg_state_heterog.tex"
 )
 message("Saved: tables_latex/10d_tab_cost_reg_state_heterog.tex")
+
+
+# ==============================================================================
+# 5.4 ROBUSTNESS REQUESTED IN REVIEW (Sept 2026 comments)
+# ==============================================================================
+# Same specification, FEs, and state clustering as Sections 5.1 and 5.2.
+# ==============================================================================
+
+message("Estimating review robustness checks (Section 5.4) ...")
+
+POST_CAPS <- c(26L, 52L)
+
+# Keep pre-SOE, SOE, and the first `cap` weeks after expiry. Later post-SOE
+# weeks are dropped rather than recoded, so they do not fall into the omitted
+# (pre-SOE) category. k_end = week_seq - T_end, so post-SOE weeks have k_end >= 1.
+cap_post <- function(df, cap) {
+  df %>% filter(postSoE == 0L | (!is.na(k_end) & k_end <= cap))
+}
+
+ROBUST_DICT <- c("SoE" = "$SOE_{st}$", "postSoE" = "$postSOE_{st}$")
+
+# ------------------------------------------------------------------------------
+# 5.4a + 5.4b. Excluding bananas; post-SOE window capped at 26 and 52 weeks
+# ------------------------------------------------------------------------------
+# Bananas: flagged as an anchor-price item priced near marginal cost with little
+#   promotion (Claude Major 5).
+# Caps: the uncapped post-SOE window runs into the 2022-23 inflation period, and
+#   states that expired later (Mississippi, Nov 2021) have more of their post
+#   window in it (Claude Major 3).
+# ------------------------------------------------------------------------------
+
+reg_nobanana <- reg_data %>%
+  filter(product != "bananas") %>%
+  mutate(product = droplevels(product))
+
+fit_robust_set <- function(outcome) {
+  fml <- as.formula(paste(outcome, "~ SoE + postSoE | product + store_id"))
+  list(
+    "(1) Baseline"         = feols(fml, data = reg_data,              cluster = ~ sst),
+    "(2) Excl. bananas"    = feols(fml, data = reg_nobanana,          cluster = ~ sst),
+    "(3) Post $\\leq$ 26 wk" = feols(fml, data = cap_post(reg_data, 26L), cluster = ~ sst),
+    "(4) Post $\\leq$ 52 wk" = feols(fml, data = cap_post(reg_data, 52L), cluster = ~ sst)
+  )
+}
+
+price_robust  <- fit_robust_set("p_ist")
+margin_robust <- fit_robust_set("margin_nom")
+
+etable(price_robust)
+
+etable(
+  price_robust,
+  tex     = TRUE,
+  file    = "tables_latex/08c_tab_price_robust.tex",
+  title   = "Price regressions: robustness to excluding bananas and to capping the post-SOE window",
+  label   = "tab:price_robust",
+  digits  = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2 + wr2,
+  dict    = ROBUST_DICT,
+  notes   = c(
+    "Dependent variable: nominal retail price $p_{ist}$.",
+    "Column (1) reproduces Table~\\ref{tab:price_reg}, column (2).",
+    "Column (2) drops bananas.",
+    "Columns (3) and (4) keep only the first 26 or 52 weeks after each state's SOE expired;",
+    "later post-SOE weeks are dropped from the sample, not recoded.",
+    "Fixed effects: product and store. Standard errors clustered at the state level."
+  )
+)
+message("Saved: tables_latex/08c_tab_price_robust.tex")
+
+etable(margin_robust)
+
+etable(
+  margin_robust,
+  tex     = TRUE,
+  file    = "tables_latex/10e_tab_margin_robust.tex",
+  title   = "Margin regressions: robustness to excluding bananas and to capping the post-SOE window",
+  label   = "tab:margin_robust",
+  digits  = 3, se.below = TRUE, depvar = FALSE, fitstat = ~ n + r2 + wr2,
+  dict    = ROBUST_DICT,
+  notes   = c(
+    "Dependent variable: nominal dollar margin $M_{ist} = p_{ist} - w_{ist}$.",
+    "Column (1) reproduces Table~\\ref{tab:margin_reg}, column (2).",
+    "Column (2) drops bananas.",
+    "Columns (3) and (4) keep only the first 26 or 52 weeks after each state's SOE expired;",
+    "later post-SOE weeks are dropped from the sample, not recoded.",
+    "Fixed effects: product and store. Standard errors clustered at the state level."
+  )
+)
+message("Saved: tables_latex/10e_tab_margin_robust.tex")
+
+
+# ------------------------------------------------------------------------------
+# 5.4c State heterogeneity with capped post-SOE windows
+# ------------------------------------------------------------------------------
+# Tests whether the Mississippi post-SOE outlier shrinks once its post window
+# no longer reaches into 2022.
+# ------------------------------------------------------------------------------
+
+fit_state_capped <- function(outcome) {
+  fml <- as.formula(paste(outcome, "~ 0 + i(sst, SoE) + i(sst, postSoE) | product + store_id"))
+  list(
+    full  = feols(fml, data = reg_data,               cluster = ~ sst),
+    cap26 = feols(fml, data = cap_post(reg_data, 26L), cluster = ~ sst),
+    cap52 = feols(fml, data = cap_post(reg_data, 52L), cluster = ~ sst)
+  )
+}
+
+build_state_capped_table <- function(models) {
+  parts <- list(
+    build_state_interleaved(models$full,  "During (all)",   "Post (all)"),
+    build_state_interleaved(models$cap26, "During (cap 26)", "Post (cap 26)"),
+    build_state_interleaved(models$cap52, "During (cap 52)", "Post (cap 52)")
+  )
+  stopifnot(length(unique(purrr::map_int(parts, nrow))) == 1L,
+            identical(parts[[1]]$State, parts[[2]]$State),
+            identical(parts[[1]]$State, parts[[3]]$State))
+  out <- dplyr::bind_cols(parts[[1]], parts[[2]][, -1], parts[[3]][, -1])
+  names(out) <- c("State", rep(c("During SOE", "Post-SOE"), 3))
+  out
+}
+
+state_capped_note <- c(
+  "Each column pair is estimated on a different sample. ``All'' uses every post-SOE week;",
+  "``cap 26'' and ``cap 52'' keep only the first 26 or 52 weeks after each state's SOE expired.",
+  "Fixed effects: product and store.",
+  "Standard errors clustered at the state level ($G = 5$) in parentheses.",
+  "Signif. codes: ***: 0.01, **: 0.05, *: 0.1"
+)
+
+price_state_capped  <- fit_state_capped("p_ist")
+margin_state_capped <- fit_state_capped("margin_nom")
+
+save_tex(
+  kbl(build_state_capped_table(price_state_capped),
+      format = "latex", booktabs = TRUE,
+      caption = "State heterogeneity in price effects with capped post-SOE windows (nominal retail price)",
+      label   = "price_state_heterog_capped",
+      align   = "lrrrrrr", escape = FALSE) %>%
+    add_header_above(c(" " = 1, "All post weeks" = 2, "Post capped at 26 weeks" = 2,
+                       "Post capped at 52 weeks" = 2)) %>%
+    kable_styling(latex_options = c("hold_position", "scale_down")) %>%
+    footnote(general = c("Dependent variable: nominal retail price $p_{ist}$.", state_capped_note),
+             general_title = "", escape = FALSE),
+  "09b_tab_price_state_heterog_capped.tex"
+)
+
+save_tex(
+  kbl(build_state_capped_table(margin_state_capped),
+      format = "latex", booktabs = TRUE,
+      caption = "State heterogeneity in margin effects with capped post-SOE windows (nominal dollar margin)",
+      label   = "margin_state_heterog_capped",
+      align   = "lrrrrrr", escape = FALSE) %>%
+    add_header_above(c(" " = 1, "All post weeks" = 2, "Post capped at 26 weeks" = 2,
+                       "Post capped at 52 weeks" = 2)) %>%
+    kable_styling(latex_options = c("hold_position", "scale_down")) %>%
+    footnote(general = c("Dependent variable: nominal dollar margin $M_{ist} = p_{ist} - w_{ist}$.",
+                         state_capped_note),
+             general_title = "", escape = FALSE),
+  "11b_tab_margin_state_heterog_capped.tex"
+)
+
+# Console check: post-SOE coefficients by state across windows (dollars, not cents)
+message("Post-SOE coefficients by state across windows (dollars):")
+purrr::imap_dfr(
+  list(price = price_state_capped, margin = margin_state_capped),
+  function(mods, outcome) {
+    purrr::imap_dfr(mods, function(m, window) {
+      broom::tidy(m) %>%
+        filter(grepl(":postSoE$", term)) %>%
+        transmute(outcome, window,
+                  state = sub("sst::([^:]+):.*", "\\1", term),
+                  estimate = round(estimate, 3))
+    })
+  }
+) %>%
+  tidyr::pivot_wider(names_from = window, values_from = estimate) %>%
+  print(n = Inf)
+
+
+# ------------------------------------------------------------------------------
+# 5.4d Event study around SOE activation
+# ------------------------------------------------------------------------------
+# Replaces the pooled SOE dummy with event-time indicators relative to each
+# state's activation week (k_start), reference week -1. Leads below -ES_LEADS
+# and lags above ES_LAGS are pooled into endpoint bins and not plotted.
+#
+# All five states activated in the same week, so event time is nearly
+# collinear with calendar time and week fixed effects cannot be included.
+# This is a check on the timing of the price path (no movement before
+# activation), not a difference-in-differences design.
+#
+# ES_LAGS = 52 keeps every plotted lag inside the SOE for all states
+# (Louisiana, the shortest, expired after 53 weeks).
+# ------------------------------------------------------------------------------
+
+ES_LEADS <- 26L
+ES_LAGS  <- 52L
+
+es_data <- reg_data %>%
+  filter(!is.na(k_start)) %>%
+  mutate(k_bin = pmin(pmax(k_start, -ES_LEADS - 1L), ES_LAGS + 1L))
+
+m_price_es <- feols(
+  p_ist ~ i(k_bin, ref = -1) | product + store_id,
+  data = es_data, cluster = ~ sst
+)
+
+# Joint test that the plotted leads (-ES_LEADS to -2) are zero. With G = 5
+# state clusters the clustered VCOV has rank at most 4, so a joint test of 25
+# leads is not valid under state clustering. The joint test therefore uses
+# store-clustered SEs; the plotted CIs keep state clustering.
+lead_terms <- paste0("k_bin::", seq(-ES_LEADS, -2L))
+lead_terms <- lead_terms[lead_terms %in% names(coef(m_price_es))]
+es_pretrend <- fixest::wald(summary(m_price_es, cluster = ~ store_id),
+                            keep = paste0("^(", paste(lead_terms, collapse = "|"), ")$"),
+                            print = FALSE)
+message(sprintf("Event study pre-trend test (leads -%d to -2, store-clustered): F = %.2f, p = %.3f",
+                ES_LEADS, es_pretrend$stat, es_pretrend$p))
+
+es_coef_df <- broom::tidy(m_price_es, conf.int = TRUE) %>%
+  filter(grepl("^k_bin::", term)) %>%
+  mutate(k = as.integer(sub("^k_bin::", "", term))) %>%
+  filter(k >= -ES_LEADS, k <= ES_LAGS) %>%
+  bind_rows(tibble::tibble(k = -1L, estimate = 0, conf.low = 0, conf.high = 0)) %>%
+  arrange(k)
+
+if (SAVE_CSV) write.csv(es_coef_df, "tables_csv/08b_price_event_study.csv", row.names = FALSE)
+
+g_price_es <- ggplot(es_coef_df, aes(x = k, y = estimate)) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_vline(xintercept = -0.5, linetype = "dotted", color = "grey40") +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.2) +
+  geom_point(size = 1.2) +
+  labs(
+    x = "Weeks relative to SOE activation (reference: week -1)",
+    y = "Coefficient (nominal price, $)",
+    title = "Event study: nominal retail price around SOE activation",
+    subtitle = sprintf(
+      "Product and store FEs; state-clustered 95%% CIs. Joint pre-trend test (weeks -%d to -2, store-clustered): F = %.2f, p = %.3f.",
+      ES_LEADS, es_pretrend$stat, es_pretrend$p)
+  ) +
+  theme_bw() +
+  theme(plot.subtitle = element_text(size = 8))
+
+g_price_es
+
+ggsave("figures/08b_fig_price_event_study.png", g_price_es,
+       width = 9, height = 5, dpi = 300)
+message("Saved: figures/08b_fig_price_event_study.png")
+
+
+# ------------------------------------------------------------------------------
+# 5.4e Leave-one-state-out jackknife
+# ------------------------------------------------------------------------------
+# Re-estimates the baseline price and margin models dropping one state at a
+# time. With G = 5, a single state (Mississippi) carries much of the state
+# heterogeneity, so this shows how much any one state drives the pooled
+# estimate. Jackknife SE = sqrt((G - 1) / G * sum((b_g - mean(b_g))^2)).
+# ------------------------------------------------------------------------------
+
+run_loso <- function(outcome) {
+  fml    <- as.formula(paste(outcome, "~ SoE + postSoE | product + store_id"))
+  states <- sort(unique(as.character(reg_data$sst)))
+  purrr::map_dfr(states, function(s) {
+    m <- feols(fml, data = reg_data %>% filter(sst != s), cluster = ~ sst)
+    tibble::tibble(outcome = outcome, dropped = s,
+                   term = names(coef(m)), estimate = unname(coef(m)))
+  })
+}
+
+loso_df <- bind_rows(run_loso("p_ist"), run_loso("margin_nom"))
+
+full_df <- bind_rows(
+  tibble::tibble(outcome = "p_ist", term = names(coef(m_price_prepost)),
+                 estimate = unname(coef(m_price_prepost))),
+  tibble::tibble(outcome = "margin_nom", term = names(coef(m_margin_prepost)),
+                 estimate = unname(coef(m_margin_prepost)))
+) %>%
+  mutate(dropped = "None (full sample)")
+
+jk_se_df <- loso_df %>%
+  group_by(outcome, term) %>%
+  summarise(estimate = sqrt((n() - 1) / n() * sum((estimate - mean(estimate))^2)),
+            .groups = "drop") %>%
+  mutate(dropped = "Jackknife SE")
+
+loso_tbl <- bind_rows(full_df, loso_df, jk_se_df) %>%
+  mutate(col = paste(outcome, term, sep = "__"),
+         estimate = formatC(estimate, digits = 3, format = "f")) %>%
+  select(dropped, col, estimate) %>%
+  tidyr::pivot_wider(names_from = col, values_from = estimate) %>%
+  mutate(dropped = factor(dropped, levels = c("None (full sample)",
+                                              sort(unique(loso_df$dropped)),
+                                              "Jackknife SE"))) %>%
+  arrange(dropped) %>%
+  select(`State dropped` = dropped,
+         `Price: SOE`      = p_ist__SoE,
+         `Price: post-SOE` = p_ist__postSoE,
+         `Margin: SOE`      = margin_nom__SoE,
+         `Margin: post-SOE` = margin_nom__postSoE)
+
+if (SAVE_CSV) write.csv(loso_tbl, "tables_csv/08d_tab_loso_jackknife.csv", row.names = FALSE)
+
+save_tex(
+  kbl(loso_tbl,
+      format = "latex", booktabs = TRUE, escape = FALSE,
+      caption = "Leave-one-state-out estimates of the SOE and post-SOE price and margin effects",
+      label   = "loso_jackknife",
+      align   = "lrrrr") %>%
+    kable_styling(latex_options = c("hold_position")) %>%
+    footnote(
+      general = c(
+        "Each row re-estimates the baseline model (Tables~\\\\ref{tab:price_reg} and~\\\\ref{tab:margin_reg}, column 2) dropping the named state.",
+        "Dependent variables: nominal retail price and nominal dollar margin (dollars).",
+        "Jackknife SE $= \\\\sqrt{\\\\frac{G-1}{G}\\\\sum_g (\\\\hat{\\\\beta}_{(g)} - \\\\bar{\\\\beta})^2}$, $G = 5$."
+      ),
+      general_title = "", escape = FALSE
+    ),
+  "08d_tab_loso_jackknife.tex"
+)
 
 message("Price and margin regressions complete.")

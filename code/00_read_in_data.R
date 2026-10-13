@@ -104,7 +104,7 @@ dwi <- dplyr::tbl(con, dbplyr::in_schema("stg", "date_week_index")) %>%
   ) %>%
   select(yr, wk, week_start, week_seq, year_week, month, month_name)
 
-# Pull store master (used in Section II descriptive table)
+# Pull store master (lat/lon for the IV pass-through in 07_passthrough.R)
 store_info <- dplyr::tbl(con, dbplyr::in_schema("stg", "pos_store_master")) %>%
   collect() %>% 
   filter(retailer_id != 1)
